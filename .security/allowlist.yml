@@ -1,0 +1,12 @@
+# 安全扫描豁免清单（铁律四；格式权威：security-baseline.md §5——CI 解析本文件并校验 expires）
+# 每条豁免必含六字段：cve / severity / component / issue / expires / rationale
+# HIGH 级豁免必须关联 issue ticket。即使为空，本文件骨架必须存在。
+exceptions: []
+# 示例：
+# exceptions:
+#   - cve: CVE-2025-XXXXX
+#     severity: HIGH
+#     component: pillow
+#     issue: "PROJ-123"
+#     expires: 2026-09-01
+#     rationale: "误报：受影响代码路径不可达，上游 issue #456 已确认"

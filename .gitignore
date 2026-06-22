@@ -1,0 +1,79 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+
+# 环境与凭证（敏感）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node / 前端
+node_modules/
+dist/
+build/
+.vite/
+.turbo/
+.next/
+coverage/
+
+# Go
+vendor/                          # 若用 modules 不要忽略，看项目策略
+*.test
+*.prof
+
+# Java
+target/
+*.class
+
+# Rust
+target/
+
+# 数据卷（services 内部）
+services/*/data/
+services/*/*/data/
+
+# 对象存储 local-filesystem 落盘目录（本地开发抓取的资讯配图等）
+backend/data/
+
+# 日志
+*.log
+logs/
+
+# 私有化交付临时打包产物
+*.tar.gz
+*.tgz
+.helm/
+deploy-bundle/
+
+# 安全 / 备份 / 内部截图
+.security/cache/
+backups/
+docs/customer/screenshots/internal/
+
+# Helm
+helm/charts/
+**/.helmignore.local

@@ -1,0 +1,3 @@
+Alembic migrations for ai-pulse backend.
+The sqlalchemy.url is injected at runtime from Settings (see env.py); alembic.ini holds no URL.
+Run: alembic upgrade head

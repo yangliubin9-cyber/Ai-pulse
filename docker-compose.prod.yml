@@ -1,0 +1,25 @@
+# ai-pulse — 生产覆盖（docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d）
+services:
+  backend:
+    deploy:
+      resources:
+        limits: { cpus: "2", memory: 2g }
+    logging:
+      driver: json-file
+      options: { max-size: "50m", max-file: "5" }
+
+  frontend:
+    deploy:
+      resources:
+        limits: { cpus: "1", memory: 512m }
+
+  postgres:
+    # 生产建议：客户自管数据库时删除本服务，改 .env 指向客户实例
+    deploy:
+      resources:
+        limits: { cpus: "2", memory: 4g }
+
+  redis:
+    deploy:
+      resources:
+        limits: { cpus: "1", memory: 1g }

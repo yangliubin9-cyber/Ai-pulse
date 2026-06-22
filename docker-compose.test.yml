@@ -1,0 +1,58 @@
+# ai-pulse — E2E 测试全栈（CI 用；04-Deployment/gitlab.md e2e 阶段）
+# 用法：docker compose -p e2e-$CI_JOB_ID -f docker-compose.test.yml up -d --build
+#       唯一 project name(-p e2e-$CI_JOB_ID) 防并发流水线撞车；跑完 down -v（失败也清理）
+# 与交付 docker-compose.yml、本地 docker-compose.dev.yml 三者用途不同，勿混淆。
+
+name: ai-pulse-test
+
+services:
+  postgres:
+    image: postgres:16.4
+    environment: { POSTGRES_USER: test, POSTGRES_PASSWORD: test, POSTGRES_DB: test, TZ: UTC }
+    tmpfs: [/var/lib/postgresql/data]    # 测试数据用 tmpfs，跑完即弃、快
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.4
+    command: ["redis-server", "--requirepass", "test"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a test ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      ENV: test
+      DB_HOST: postgres
+      DB_USER: test
+      DB_PASSWORD: test
+      DB_NAME: test
+      CACHE_HOST: redis
+      CACHE_PASSWORD: test
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz/ready', timeout=2).status==200 else 1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # Playwright runner：等 frontend 起来后跑 golden path E2E
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.48.0-jammy   # TODO(bootstrap): 离线环境改客户 registry 镜像
+    depends_on:
+      frontend: { condition: service_started }
+    environment: { BASE_URL: "http://frontend:80" }
+    command: ["sh", "-c", "echo 'TODO(bootstrap): npx playwright test golden-path'"]

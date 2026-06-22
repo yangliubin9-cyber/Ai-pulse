@@ -1,0 +1,18 @@
+# pre-commit 骨架（铁律四：密钥检测必备；其余按项目语言增删，对照 coding-standards.md §7）
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4          # TODO: 固定到当前最新稳定版
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ["--maxkb=10240"]   # 铁律：>10MB 二进制禁入 git
+      - id: check-merge-conflict
+
+  # TODO（Python 后端）：ruff / mypy
+  # TODO（前端）：eslint / prettier / tsc --noEmit

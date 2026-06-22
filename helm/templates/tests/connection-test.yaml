@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "app.name" . }}-connection-test
+  annotations:
+    "helm.sh/hook": test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: readyz-check
+      # 离线环境：把该镜像加入 bundle images/（或改用客户 registry 镜像），否则 helm test 拉不到镜像
+      image: curlimages/curl:8.10.1
+      command: ["curl", "-fsS", "http://{{ include "app.name" . }}-backend:8000/healthz/ready"]

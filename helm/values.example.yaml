@@ -1,0 +1,28 @@
+# ai-pulse 客户配置样例（铁律七：每字段注释；敏感字段引用外部 Secret 不写明文）
+image:
+  registry: "registry.customer.local"   # 客户私有镜像仓库地址（⇄ IMAGE_REGISTRY）
+  tag: "1.0.0"                          # 部署版本 = 交付的 git tag，禁 latest（⇄ IMAGE_TAG）
+  pullSecrets: ["regcred"]              # kubectl create secret docker-registry regcred ...
+
+env: prod                               # 环境标识（⇄ ENV）
+tz: UTC                                 # 全栈统一 UTC，展示层转换（⇄ TZ）
+
+logging:
+  level: INFO                           # ⇄ LOG_LEVEL
+
+database:
+  provider: postgres                    # postgres | mysql | oracle | tidb（铁律二全 provider 可选）
+  host: "db.customer.local"             # 客户数据库地址（⇄ DB_HOST）
+  existingSecret: "ai-pulse-db" # 含 password 键的 Secret # SECRET
+
+cache:
+  provider: redis
+  host: "redis.customer.local"          # ⇄ CACHE_HOST
+  existingSecret: "ai-pulse-redis"   # SECRET
+
+ingress:
+  enabled: true
+  host: "app.customer.local"            # 客户访问域名
+  tls:
+    enabled: true
+    secretName: "ai-pulse-tls"  # TLS 证书 Secret

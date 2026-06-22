@@ -1,0 +1,6 @@
+apiVersion: v2
+name: "ai-pulse"
+description: "ai-pulse 企业私有化交付 Chart（铁律三交付模式 3）"
+type: application
+version: 0.1.0          # chart 自身版本（独立 SemVer）
+appVersion: "0.1.0"     # 必须 = git tag（git-workflow.md §6）

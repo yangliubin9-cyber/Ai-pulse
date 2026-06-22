@@ -1,0 +1,61 @@
+# ai-pulse values（默认值；键名与 .env.example / GitLab CI variables 机械映射）
+# IMAGE_REGISTRY ⇄ image.registry；ENV ⇄ env；LOG_LEVEL ⇄ logging.level；
+# DATABASE_PROVIDER ⇄ database.provider；DB_* ⇄ database.*（历史命名例外，见 .env.example 头注）；
+# CACHE_* ⇄ cache.*；OTEL_* ⇄ otel.*
+
+image:
+  registry: "registry.example.com"
+  tag: ""                 # 必填 = git tag，禁 latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+replicaCount:
+  backend: 1
+  frontend: 1
+
+env: dev                  # ⇄ ENV：dev | staging | prod
+tz: UTC                   # ⇄ TZ：全栈统一 UTC
+
+logging:
+  level: INFO             # ⇄ LOG_LEVEL
+  format: json
+
+database:                 # ⇄ DATABASE_PROVIDER / DB_*
+  provider: postgres
+  host: ""
+  port: 5432
+  user: "ai-pulse"
+  existingSecret: ""      # 密码引用外部 Secret（键 password），不写明文
+  name: "ai-pulse"
+  poolSize: 10
+  sslMode: prefer
+
+cache:                    # ⇄ CACHE_*
+  provider: redis
+  host: ""
+  port: 6379
+  existingSecret: ""
+
+otel:                     # ⇄ OTEL_*
+  tracesEnabled: false
+  exporterOtlpMetricsEnabled: false
+  tracesSamplerArg: 0.1
+
+resources:
+  backend:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits:   { cpu: "2",  memory: 2Gi }
+  frontend:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: "1",  memory: 512Mi }
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  tls:
+    enabled: true
+    secretName: ""
+
+# templates/ 已含 backend/frontend Deployment+Service（带三探针）与连通性测试骨架；
+# ingress/configmap/secret/hpa/pdb/networkpolicy/rbac 按 04-Deployment/helm.md 在补齐集阶段补全

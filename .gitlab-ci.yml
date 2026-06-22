@@ -1,0 +1,122 @@
+# ai-pulse — 交付模式 2（铁律三；阶段规范见 04-Deployment/gitlab.md）
+# 凭证全走 GitLab Masked / File Variables，禁止写进本文件
+# CI Variables 字段名与 .env.example / helm/values.yaml 完全一致
+
+stages: [lint, test, contract, e2e, sast, deps_scan, secret_scan, build, image_scan, publish, deploy, verify]
+
+variables:
+  IMAGE_BACKEND: "$REGISTRY_URL/ai-pulse-backend"
+  IMAGE_FRONTEND: "$REGISTRY_URL/ai-pulse-frontend"
+
+# ── 依赖缓存（D2：按 lockfile 绑 key，避免每次冷装）──
+.backend_cache: &backend_cache
+  cache:
+    key: { files: [backend/uv.lock] }
+    paths: [backend/.venv, .cache/uv]
+.frontend_cache: &frontend_cache
+  cache:
+    key: { files: [frontend/package-lock.json] }
+    paths: [frontend/node_modules]
+
+# ══ lint：前后端拆分 + path 触发（D1）══
+lint:backend:
+  stage: lint
+  <<: *backend_cache
+  rules: [ { changes: [backend/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script: [ "echo 'TODO: ruff check + mypy（backend/）'" ]
+lint:frontend:
+  stage: lint
+  <<: *frontend_cache
+  rules: [ { changes: [frontend/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script: [ "echo 'TODO: eslint + prettier --check + tsc --noEmit（frontend/）'" ]
+
+# ══ test：拆分 + 测试隔离（D7：testcontainers 随机端口、唯一资源名、失败也清理）══
+test:backend:
+  stage: test
+  <<: *backend_cache
+  rules: [ { changes: [backend/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script:
+    - echo "TODO: pytest 单元+集成(testcontainers 随机端口) 分层覆盖率(核心70/适配器80/整体60)"
+    - echo "B档云端provider豁免真实实例(03-Services/overview.md)"
+test:frontend:
+  stage: test
+  <<: *frontend_cache
+  rules: [ { changes: [frontend/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script: [ "echo 'TODO: vitest run --coverage（核心70/整体60）'" ]
+
+# ══ contract：OpenAPI breaking-change diff（D5：默认硬阻断，除非 major bump）══
+contract:openapi:
+  stage: contract
+  rules: [ { changes: [backend/**/*, frontend/src/api/generated/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script:
+    - echo "TODO: 1) 后端重新生成 openapi.json 与提交版 diff（须一致）"
+    - echo "TODO: 2) oasdiff breaking 对比上个 tag：有 breaking 且非 major 版本升级 => 失败"
+    - echo "TODO: 3) 前端 src/api/generated 与 openapi.json 重新生成后 diff 一致"
+
+# ══ e2e：起全栈跑 Playwright（D4：golden path 强制；唯一 project name 防并发撞车 D7）══
+e2e:
+  stage: e2e
+  rules: [ { if: '$CI_COMMIT_BRANCH == "main"' }, { if: '$CI_COMMIT_TAG' } ]
+  script:
+    - echo "TODO: docker compose -p e2e-$CI_JOB_ID -f docker-compose.test.yml up -d --build"
+    - echo "TODO: 等 healthz/ready 全绿 → npx playwright test（golden path）"
+    - echo "TODO: docker compose -p e2e-$CI_JOB_ID down -v  # 失败也清理"
+
+# ── 安全四扫描（铁律四；可并行）──
+sast:
+  stage: sast
+  script: [ "echo 'TODO: semgrep --sarif-output sast.sarif'" ]
+  artifacts: { reports: { sast: sast.sarif } }
+deps_scan:
+  stage: deps_scan
+  script: [ "echo 'TODO: trivy fs --format sarif（前后端依赖 CVE + license）'" ]
+secret_scan:
+  stage: secret_scan
+  script: [ "echo 'TODO: gitleaks detect --report-format sarif'" ]
+
+# ══ build：双镜像拆分（D1）+ layer 缓存（D2）；多架构暂单 amd64，信创需求再开 buildx（D3 暂缓）══
+build:backend:
+  stage: build
+  rules: [ { changes: [backend/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script:
+    - echo "TODO: kaniko --cache=true --cache-repo=$IMAGE_BACKEND/cache 构建 $IMAGE_BACKEND:$CI_COMMIT_TAG（禁 latest）"
+    - echo "# 未来多架构：buildx --platform linux/amd64,linux/arm64（信创 arm64，暂缓）"
+build:frontend:
+  stage: build
+  rules: [ { changes: [frontend/**/*] }, { if: '$CI_COMMIT_TAG' } ]
+  script:
+    - echo "TODO: kaniko --cache=true --cache-repo=$IMAGE_FRONTEND/cache 构建 $IMAGE_FRONTEND:$CI_COMMIT_TAG"
+
+# ══ image_scan：双镜像各扫（D6）；CRITICAL 即终止，必须在 publish 之前 ══
+image_scan:
+  stage: image_scan
+  parallel:
+    matrix:
+      - IMAGE: [ "$IMAGE_BACKEND", "$IMAGE_FRONTEND" ]
+  script: [ "echo \"TODO: trivy image --exit-code 1 --severity CRITICAL $IMAGE:$CI_COMMIT_TAG\"" ]
+
+# ══ publish：双镜像各推（D6）+ helm + SBOM（security-baseline §11）══
+publish:
+  stage: publish
+  rules: [ { if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/' } ]
+  script:
+    - echo "TODO: push $IMAGE_BACKEND 与 $IMAGE_FRONTEND（v1.2.3 / 1.2 / 1.2.3-sha 三 tag）"
+    - echo "TODO: publish helm chart + CHANGELOG artifact + SBOM(cyclonedx) + THIRD-PARTY-NOTICES"
+
+bundle:verify:                       # 防漂移（deploy-bundle.md §3）
+  stage: verify
+  rules: [ { if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/' } ]
+  script: [ "bash scripts/make-bundle.sh \"$CI_COMMIT_TAG\" --verify-only" ]
+
+deploy:upgrade:
+  stage: deploy
+  when: manual                       # 客户决定何时上线，需 approver
+  script: [ "echo 'TODO: 备份 → 拉新镜像 → migration → up → 烟雾测试'" ]
+deploy:rollback:
+  stage: deploy
+  when: manual
+  script: [ "echo 'TODO: 按传入 TARGET_TAG 回滚（不绑死前一版本，N-1 兼容只切镜像）'" ]
+
+verify:
+  stage: verify
+  script: [ "echo 'TODO: 部署后烟雾测试（healthz 三探针 + golden path）'" ]
