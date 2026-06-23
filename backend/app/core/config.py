@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     INGEST_INTERVAL_MINUTES: int = 60
     INGEST_ON_STARTUP: bool = True
 
+    # --- translation (offline en->zh machine translation at ingest time) ---
+    TRANSLATION_ENABLED: bool = True
+    TRANSLATION_PROVIDER: str = "local"
+    TRANSLATION_TARGET_LANG: str = "zh"
+
     # --- observability / otel ---
     OTEL_TRACES_ENABLED: bool = False
     OTEL_EXPORTER_OTLP_METRICS_ENABLED: bool = False

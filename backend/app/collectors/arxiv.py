@@ -8,7 +8,13 @@ import feedparser
 import httpx
 import structlog
 
-from app.collectors.base import HEADERS, TIMEOUT, CollectedItem, parse_struct_time
+from app.collectors.base import (
+    HEADERS,
+    TIMEOUT,
+    CollectedItem,
+    freshness_score,
+    parse_struct_time,
+)
 from app.constants import (
     ARXIV_API_URL,
     ARXIV_MAX_RESULTS,
@@ -48,15 +54,20 @@ async def collect_arxiv(window_days: int) -> list[CollectedItem]:
                 authors = ", ".join(
                     a.get("name", "") for a in entry.get("authors", []) if a.get("name")
                 )
+                published_at = parse_struct_time(entry.get("published_parsed"))
+                abstract = _collapse(entry.get("summary", ""))
                 items.append(
                     CollectedItem(
                         source_type=SOURCE_TYPE_ARXIV,
                         source_name=ARXIV_SOURCE_NAME,
                         title=_collapse(entry.get("title", "")),
                         url=link,
-                        summary=_collapse(entry.get("summary", "")),
+                        summary=abstract,
+                        # arXiv's "summary" is the full abstract; reuse it as the body.
+                        content=abstract or None,
                         author=authors or None,
-                        published_at=parse_struct_time(entry.get("published_parsed")),
+                        published_at=published_at,
+                        score=freshness_score(published_at),
                     )
                 )
     except Exception as exc:

@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/i18n/I18nProvider';
 
 interface PaginationProps {
   page: number;
@@ -15,13 +16,14 @@ export function Pagination({
   total,
   onPageChange,
 }: PaginationProps): React.JSX.Element | null {
+  const t = useT();
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1) return null;
 
   return (
     <nav
       className="flex items-center justify-between gap-4 py-4"
-      aria-label="分页"
+      aria-label={t('pagination.nav')}
       data-testid="pagination"
     >
       <Button
@@ -31,10 +33,10 @@ export function Pagination({
         onClick={() => onPageChange(page - 1)}
       >
         <ChevronLeft className="h-4 w-4" />
-        上一页
+        {t('pagination.prev')}
       </Button>
       <span className="text-xs tabular-nums text-muted-foreground">
-        第 {page} / {totalPages} 页 · 共 {total} 条
+        {t('pagination.pageInfo', { page, total: totalPages, count: total })}
       </span>
       <Button
         variant="outline"
@@ -42,7 +44,7 @@ export function Pagination({
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
       >
-        下一页
+        {t('pagination.next')}
         <ChevronRight className="h-4 w-4" />
       </Button>
     </nav>

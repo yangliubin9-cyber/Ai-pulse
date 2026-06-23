@@ -1,65 +1,119 @@
+import { memo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
-import { SourceIcon } from './SourceIcon';
+import { SourceAvatar } from './SourceAvatar';
 import { CategoryBadge } from './CategoryBadge';
-import { Badge } from '@/components/ui/badge';
-import { relativeTime } from '@/lib/time';
-import { sourceTypeLabel } from '@/lib/constants';
+import { ScoreBadge } from './ScoreBadge';
+import { useI18n } from '@/i18n/I18nProvider';
+import { displayTitle, displaySummary } from '@/lib/display';
+import { itemPath } from '@/lib/itemPath';
 import type { Item } from '@/lib/types';
 
 interface ItemCardProps {
   item: Item;
 }
 
+/** Module-level, reference-stable handler so it never re-creates per render. */
+function stopPropagation(e: React.MouseEvent): void {
+  e.stopPropagation();
+}
+
 /**
- * Dense, text-first feed row. Left accent rule (category hue) instead of a
- * heavy boxed card with shadow — reads like a real aggregator listing.
+ * Timeline feed card: source avatar + name + @handle, optional heat badge,
+ * a title that opens the in-site detail page, a clamped summary, an optional
+ * thumbnail, and a footer of category + tags. A small secondary link still
+ * jumps to the original article.
  */
-export function ItemCard({ item }: ItemCardProps): React.JSX.Element {
+function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
+  const { lang, t } = useI18n();
+  const [imageOk, setImageOk] = useState(true);
+  const showImage = Boolean(item.image_url) && imageOk;
+  const detailPath = itemPath(item.id);
+  const title = displayTitle(item, lang);
+  const summary = displaySummary(item, lang);
+
   return (
     <article
-      className="group relative border-l-2 border-border bg-surface px-4 py-3 transition-colors duration-150 ease-out hover:border-l-accent hover:bg-surface-muted"
+      className="group rounded-xl border border-border bg-surface p-4 transition-colors duration-200 ease-out hover:border-accent/40 hover:bg-surface-muted"
       data-testid="item-card"
     >
-      <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-        <SourceIcon type={item.source_type} className="h-3.5 w-3.5" />
-        <span className="font-medium text-foreground/80">{item.source_name}</span>
-        <span aria-hidden>·</span>
-        <span>{sourceTypeLabel(item.source_type)}</span>
-        <span className="ml-auto tabular-nums">{relativeTime(item.published_at)}</span>
+      {/* Header row: avatar · source · @handle · heat badge */}
+      <div className="mb-2 flex items-center gap-2 text-xs">
+        <SourceAvatar name={item.source_name} />
+        <span className="truncate font-medium text-foreground">{item.source_name}</span>
+        {item.author && (
+          <span className="truncate text-muted-foreground">@{item.author}</span>
+        )}
+        {item.score != null && (
+          <span className="ml-auto shrink-0">
+            <ScoreBadge score={item.score} />
+          </span>
+        )}
       </div>
 
-      <h3 className="text-[15px] font-semibold leading-snug">
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[15px] font-semibold leading-snug">
+            <Link
+              to={detailPath}
+              className="inline-flex items-baseline gap-1 text-foreground decoration-accent/40 decoration-2 underline-offset-2 hover:text-accent hover:underline"
+              title={t('card.viewDetail')}
+            >
+              <span>{title}</span>
+            </Link>
+          </h3>
+
+          {summary && (
+            <Link
+              to={detailPath}
+              className="mt-1.5 block line-clamp-3 text-sm leading-relaxed text-muted-foreground hover:text-foreground"
+            >
+              {summary}
+            </Link>
+          )}
+        </div>
+
+        {showImage && item.image_url && (
+          <Link to={detailPath} className="shrink-0" aria-hidden tabIndex={-1}>
+            <img
+              src={item.image_url}
+              alt=""
+              loading="lazy"
+              onError={() => setImageOk(false)}
+              className="h-16 w-24 rounded-lg border border-border object-cover sm:h-20 sm:w-28"
+            />
+          </Link>
+        )}
+      </div>
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        <CategoryBadge category={item.category} />
+        {item.tags.slice(0, 5).map((tag) => (
+          <span
+            key={tag}
+            className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground"
+          >
+            {tag}
+          </span>
+        ))}
         <a
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-baseline gap-1 text-foreground decoration-accent/40 decoration-2 underline-offset-2 hover:text-accent hover:underline"
+          onClick={stopPropagation}
+          className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-accent"
+          title={t('card.openExternal')}
         >
-          <span>{item.title}</span>
-          <ExternalLink
-            className="inline h-3.5 w-3.5 shrink-0 translate-y-0.5 opacity-0 transition-opacity group-hover:opacity-60"
-            aria-hidden
-          />
+          {t('card.original')}
+          <ExternalLink className="h-3 w-3" aria-hidden />
         </a>
-      </h3>
-
-      {item.summary && (
-        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-          {item.summary}
-        </p>
-      )}
-
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <CategoryBadge category={item.category} />
-        {item.author && (
-          <span className="text-[11px] text-muted-foreground">{item.author}</span>
-        )}
-        {item.tags.slice(0, 4).map((tag) => (
-          <Badge key={tag} variant="outline">
-            {tag}
-          </Badge>
-        ))}
       </div>
     </article>
   );
 }
+
+/**
+ * Memoized: props are just `item` (a stable reference once fetched), so the
+ * card skips re-render when an unrelated sibling/parent state changes.
+ */
+export const ItemCard = memo(ItemCardImpl);

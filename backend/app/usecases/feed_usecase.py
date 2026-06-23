@@ -23,6 +23,7 @@ class FeedUsecase:
         category: str | None = None,
         source_type: str | None = None,
         featured: bool = False,
+        q: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[FeedItem], int]:
@@ -30,6 +31,7 @@ class FeedUsecase:
             category=category,
             source_type=source_type,
             featured=featured,
+            q=q,
             page=page,
             page_size=page_size,
         )

@@ -1,5 +1,5 @@
 import { FeedList } from './FeedList';
-import { FeedSkeleton, FeedEmpty, FeedError } from './FeedStates';
+import { FeedStateGate } from './FeedStates';
 import type { Item } from '@/lib/types';
 
 interface FeedSectionProps {
@@ -24,10 +24,17 @@ export function FeedSection({
   emptyTitle,
   emptyDescription,
 }: FeedSectionProps): React.JSX.Element {
-  if (isPending) return <FeedSkeleton />;
-  if (isError) return <FeedError error={error} onRetry={onRetry} />;
-  if (!items || items.length === 0) {
-    return <FeedEmpty title={emptyTitle} description={emptyDescription} />;
-  }
-  return <FeedList items={items} grouped={grouped} />;
+  return (
+    <FeedStateGate
+      isPending={isPending}
+      isError={isError}
+      error={error}
+      onRetry={onRetry}
+      isEmpty={!items || items.length === 0}
+      emptyTitle={emptyTitle}
+      emptyDescription={emptyDescription}
+    >
+      <FeedList items={items ?? []} grouped={grouped} />
+    </FeedStateGate>
+  );
 }

@@ -25,6 +25,46 @@ class FeedItemRepository:
         await self._session.flush()
         return feed_item
 
+    async def list_missing_translations(self, limit: int) -> list[FeedItem]:
+        """Rows still needing a zh translation: title_zh / summary_zh / content_zh NULL.
+
+        Used by the idempotent translation backfill. The backfill writes "" (not
+        NULL) to fields it has attempted, so already-processed rows stop matching.
+        """
+        result = await self._session.execute(
+            select(FeedItem)
+            .where(
+                (FeedItem.title_zh.is_(None))
+                | (FeedItem.summary_zh.is_(None))
+                | (FeedItem.content_zh.is_(None))
+            )
+            .order_by(FeedItem.published_at.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def list_by_ids(self, ids: list[str]) -> list[FeedItem]:
+        """Fetch the given rows by id (used by the post-ingest translation task)."""
+        if not ids:
+            return []
+        result = await self._session.execute(
+            select(FeedItem).where(FeedItem.id.in_(ids))
+        )
+        return list(result.scalars().all())
+
+    async def list_all_for_retranslation(self, limit: int, offset: int) -> list[FeedItem]:
+        """Page over *all* rows (stable id order) for a forced re-translation.
+
+        Unlike ``list_missing_translations`` this ignores existing zh values; the
+        caller (``backfill_translations(force=True)``) overwrites them. Ordering
+        by the immutable id guarantees the offset-based paging terminates even as
+        rows are updated mid-run.
+        """
+        result = await self._session.execute(
+            select(FeedItem).order_by(FeedItem.id).offset(offset).limit(limit)
+        )
+        return list(result.scalars().all())
+
     async def bulk_existing_hashes(self, hashes: list[str]) -> set[str]:
         if not hashes:
             return set()
@@ -38,6 +78,7 @@ class FeedItemRepository:
         category: str | None = None,
         source_type: str | None = None,
         featured: bool = False,
+        q: str | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[FeedItem], int]:
@@ -46,6 +87,20 @@ class FeedItemRepository:
             filters.append(FeedItem.category == category)
         if source_type:
             filters.append(FeedItem.source_type == source_type)
+        if q and q.strip():
+            # Case-insensitive fuzzy match across the English source columns AND
+            # their Chinese translations, so a Chinese-UI user searching in
+            # Chinese still finds English-source items. Parameterized via
+            # SQLAlchemy ilike() (escapes the bound value); LIKE wildcards in the
+            # user input are escaped so they are treated as literals.
+            term = q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            pattern = f"%{term}%"
+            filters.append(
+                FeedItem.title.ilike(pattern, escape="\\")
+                | FeedItem.title_zh.ilike(pattern, escape="\\")
+                | FeedItem.summary.ilike(pattern, escape="\\")
+                | FeedItem.summary_zh.ilike(pattern, escape="\\")
+            )
 
         count_stmt = select(func.count()).select_from(FeedItem)
         if filters:
@@ -99,6 +154,8 @@ class FeedItemRepository:
             select(FeedItem)
             .where(FeedItem.published_at >= start, FeedItem.published_at < end)
             .order_by(FeedItem.published_at.desc())
+            # Cap one day's payload to match the /items page_size upper bound.
+            .limit(200)
         )
         return list(result.scalars().all())
 

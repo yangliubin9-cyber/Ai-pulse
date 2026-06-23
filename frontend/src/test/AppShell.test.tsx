@@ -23,7 +23,7 @@ describe('AppShell', () => {
     );
 
     expect(screen.getByText('精选')).toBeInTheDocument();
-    expect(screen.getByText('全部')).toBeInTheDocument();
+    expect(screen.getByText('全部 AI 动态')).toBeInTheDocument();
     expect(screen.getByText('AI 日报')).toBeInTheDocument();
     expect(screen.getByText('来源')).toBeInTheDocument();
   });

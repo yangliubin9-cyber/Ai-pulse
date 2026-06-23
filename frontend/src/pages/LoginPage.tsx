@@ -4,8 +4,10 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useLogin, authErrorMessage } from '@/hooks/useAuth';
+import { useLogin } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
+import { useT } from '@/i18n/I18nProvider';
+import { getErrorMessage } from '@/i18n/errors';
 
 /**
  * Standalone login screen (no AppShell). Two-pane on wide screens: a quiet
@@ -13,6 +15,7 @@ import { useAuthStore } from '@/store/authStore';
  */
 export function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
+  const t = useT();
   const status = useAuthStore((s) => s.status);
   const login = useLogin();
 
@@ -42,20 +45,21 @@ export function LoginPage(): React.JSX.Element {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <aside className="relative hidden flex-col justify-between border-r border-border bg-surface-muted p-10 lg:flex">
-        <Logo className="text-lg" />
+      <aside className="relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
+        <Logo className="text-lg text-white" />
         <div className="max-w-sm">
-          <h2 className="text-2xl font-semibold leading-snug tracking-tight">
-            把每天的 AI 动态，
+          <h2 className="text-2xl font-semibold leading-snug tracking-tight text-white">
+            {t('login.valueProp1')}
             <br />
-            收敛成一条清晰的时间线。
+            {t('login.valueProp2Prefix')}
+            <span className="text-accent">{t('login.valuePropTimeline')}</span>
+            {t('login.valueProp2Suffix')}
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            从官方博客、Hacker News、arXiv 等公开来源聚合，按模型 / 产品 / 行业 / 论文 /
-            技巧分类，去噪后只留下值得一看的内容。
+          <p className="mt-3 text-sm leading-relaxed text-sidebar-foreground/80">
+            {t('login.description')}
           </p>
         </div>
-        <p className="text-xs text-muted-foreground">仅聚合公开来源，保留原文出处与链接。</p>
+        <p className="text-xs text-sidebar-foreground/60">{t('login.disclaimer')}</p>
       </aside>
 
       <main className="flex items-center justify-center px-6 py-12">
@@ -63,13 +67,13 @@ export function LoginPage(): React.JSX.Element {
           <div className="mb-8 lg:hidden">
             <Logo className="text-lg" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight">登录</h1>
-          <p className="mt-1 text-sm text-muted-foreground">使用你的账户继续</p>
+          <h1 className="text-xl font-semibold tracking-tight">{t('login.title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('login.subtitle')}</p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium">
-                邮箱
+                {t('login.email')}
               </label>
               <Input
                 id="email"
@@ -79,14 +83,14 @@ export function LoginPage(): React.JSX.Element {
                 inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 required
               />
             </div>
 
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium">
-                密码
+                {t('login.password')}
               </label>
               <div className="relative">
                 <Input
@@ -102,7 +106,7 @@ export function LoginPage(): React.JSX.Element {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                  aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -115,7 +119,7 @@ export function LoginPage(): React.JSX.Element {
 
             {login.isError && (
               <p className="text-sm text-destructive" role="alert">
-                {authErrorMessage(login.error)}
+                {getErrorMessage(login.error, t)}
               </p>
             )}
 
@@ -126,7 +130,7 @@ export function LoginPage(): React.JSX.Element {
               disabled={login.isPending}
             >
               {login.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {login.isPending ? '登录中…' : '登录'}
+              {login.isPending ? t('login.submitting') : t('login.submit')}
             </Button>
           </form>
         </div>

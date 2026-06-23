@@ -3,89 +3,107 @@
 @tailwind utilities;
 
 /*
- * AI Pulse design tokens.
- * Palette: graphite/ink neutrals + a single warm amber accent.
- * Deliberately NOT indigo/violet gradients, NOT glassmorphism.
- * Light mode reads like a near-white newsprint surface; dark mode is a
- * full graphite cover. All values HSL so Tailwind can apply opacity.
+ * AI Pulse design tokens — self-authored.
+ * Default = dark: deep navy canvas, a card surface one notch brighter, and a
+ * single cyan accent. Deliberately NOT indigo/violet gradients, NOT
+ * glassmorphism, NOT heavy shadows. The light theme is a full override that
+ * keeps the same structural roles. All values HSL so Tailwind can apply opacity.
+ *
+ * Theme roles:
+ *   --background      app canvas (behind everything)
+ *   --sidebar         fixed left rail (slightly off-canvas)
+ *   --surface         card / panel face (one step above canvas)
+ *   --surface-muted   inset / hover face
+ *   --accent          cyan — links, active states, focus ring
  */
 
 :root {
-  --background: 40 30% 98%;
-  --foreground: 220 18% 14%;
+  /* Dark is the default experience. */
+  --background: 222 30% 8%;
+  --foreground: 210 20% 92%;
+
+  --sidebar: 222 32% 6%;
+  --sidebar-foreground: 210 16% 70%;
+
+  --surface: 222 26% 11%;
+  --surface-muted: 222 22% 15%;
+
+  --card: 222 26% 11%;
+  --card-foreground: 210 20% 92%;
+
+  --popover: 222 28% 10%;
+  --popover-foreground: 210 20% 92%;
+
+  --primary: 210 20% 92%;
+  --primary-foreground: 222 30% 8%;
+
+  --accent: 190 90% 50%;
+  --accent-foreground: 222 40% 8%;
+
+  --muted: 222 20% 16%;
+  --muted-foreground: 215 14% 58%;
+
+  --destructive: 0 70% 58%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 222 18% 20%;
+  --input: 222 18% 22%;
+  --ring: 190 90% 50%;
+
+  /* Category accent hues (badge tint + avatar fallback). */
+  --cat-model: 199 85% 56%;
+  --cat-product: 156 60% 50%;
+  --cat-industry: 35 90% 58%;
+  --cat-paper: 268 70% 68%;
+  --cat-technique: 340 75% 62%;
+  --cat-other: 215 14% 58%;
+
+  --radius: 0.55rem;
+}
+
+[data-theme='light'] {
+  --background: 210 30% 97%;
+  --foreground: 222 30% 14%;
+
+  --sidebar: 222 24% 13%;
+  --sidebar-foreground: 210 16% 74%;
 
   --surface: 0 0% 100%;
-  --surface-muted: 40 22% 96%;
+  --surface-muted: 210 28% 94%;
 
   --card: 0 0% 100%;
-  --card-foreground: 220 18% 14%;
+  --card-foreground: 222 30% 14%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 18% 14%;
+  --popover-foreground: 222 30% 14%;
 
-  --primary: 222 28% 20%;
-  --primary-foreground: 40 30% 98%;
+  --primary: 222 30% 16%;
+  --primary-foreground: 0 0% 100%;
 
-  --accent: 28 92% 48%;
-  --accent-foreground: 40 30% 98%;
+  --accent: 190 88% 38%;
+  --accent-foreground: 0 0% 100%;
 
-  --muted: 40 16% 92%;
-  --muted-foreground: 220 9% 42%;
+  --muted: 210 24% 92%;
+  --muted-foreground: 218 14% 42%;
 
-  --destructive: 0 70% 45%;
+  --destructive: 0 70% 46%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 220 14% 88%;
-  --input: 220 14% 86%;
-  --ring: 28 92% 48%;
+  --border: 214 20% 86%;
+  --input: 214 20% 84%;
+  --ring: 190 88% 38%;
 
-  /* Category accent hues (used as left rule + badge tint) */
-  --cat-model: 199 80% 40%;
-  --cat-product: 152 52% 38%;
-  --cat-industry: 28 80% 46%;
-  --cat-paper: 268 38% 50%;
-  --cat-technique: 340 60% 48%;
-  --cat-other: 220 8% 50%;
-
-  --radius: 0.4rem;
+  --cat-model: 199 82% 42%;
+  --cat-product: 156 56% 36%;
+  --cat-industry: 32 86% 44%;
+  --cat-paper: 268 52% 52%;
+  --cat-technique: 340 64% 48%;
+  --cat-other: 218 14% 46%;
 }
 
-[data-theme='dark'] {
-  --background: 222 18% 9%;
-  --foreground: 40 18% 92%;
-
-  --surface: 222 16% 12%;
-  --surface-muted: 222 14% 15%;
-
-  --card: 222 16% 12%;
-  --card-foreground: 40 18% 92%;
-
-  --popover: 222 16% 13%;
-  --popover-foreground: 40 18% 92%;
-
-  --primary: 40 18% 92%;
-  --primary-foreground: 222 18% 9%;
-
-  --accent: 30 90% 55%;
-  --accent-foreground: 222 18% 9%;
-
-  --muted: 222 12% 18%;
-  --muted-foreground: 220 10% 64%;
-
-  --destructive: 0 64% 56%;
-  --destructive-foreground: 0 0% 100%;
-
-  --border: 222 12% 22%;
-  --input: 222 12% 24%;
-  --ring: 30 90% 55%;
-
-  --cat-model: 199 70% 58%;
-  --cat-product: 152 46% 56%;
-  --cat-industry: 30 84% 60%;
-  --cat-paper: 268 44% 68%;
-  --cat-technique: 340 62% 64%;
-  --cat-other: 220 10% 64%;
-}
+/* Light sidebar stays dark navy by design (constant rail); but offer a fully
+   light rail under light theme for users who want it uniform. We keep the rail
+   dark in both for brand continuity — only its foreground tokens above adjust. */
 
 @layer base {
   * {

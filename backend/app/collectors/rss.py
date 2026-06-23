@@ -2,22 +2,43 @@
 
 from __future__ import annotations
 
-import re
-
 import feedparser
 import httpx
 import structlog
 
-from app.collectors.base import HEADERS, TIMEOUT, CollectedItem, parse_struct_time
+from app.collectors.base import (
+    HEADERS,
+    TIMEOUT,
+    CollectedItem,
+    clean_html_to_text,
+    freshness_score,
+    parse_struct_time,
+)
 from app.constants import RSS_FEEDS, SOURCE_TYPE_RSS
 
 logger = structlog.get_logger(__name__)
 
-_TAG_RE = re.compile(r"<[^>]+>")
+# Summaries are list-view blurbs, so keep them short. The full body lives in
+# ``content`` (capped separately by clean_html_to_text's default).
+SUMMARY_MAX_CHARS = 600
 
 
-def _strip_html(text: str) -> str:
-    return _TAG_RE.sub("", text or "").strip()
+def _raw_content(entry) -> str | None:
+    """Pick the fullest body the source itself published, raw (not yet cleaned).
+
+    Prefers content:encoded / content (often full-text HTML) over summary. We only
+    use what the feed hands us; we never fetch the article page.
+    """
+    contents = entry.get("content") or []
+    for c in contents:
+        value = c.get("value")
+        if value and value.strip():
+            return value
+    for key in ("summary", "description"):
+        value = entry.get(key)
+        if value and value.strip():
+            return value
+    return None
 
 
 def _first_image(entry) -> str | None:
@@ -48,16 +69,22 @@ async def collect_rss(window_days: int) -> list[CollectedItem]:
                     link = entry.get("link")
                     if not link:
                         continue
+                    published_at = parse_struct_time(entry.get("published_parsed"))
                     items.append(
                         CollectedItem(
                             source_type=SOURCE_TYPE_RSS,
                             source_name=name,
                             title=(entry.get("title") or "").strip(),
                             url=link,
-                            summary=_strip_html(entry.get("summary", "")),
+                            summary=clean_html_to_text(
+                                entry.get("summary", ""), max_chars=SUMMARY_MAX_CHARS
+                            )
+                            or "",
+                            content=clean_html_to_text(_raw_content(entry)),
                             author=entry.get("author"),
                             image_url=_first_image(entry),
-                            published_at=parse_struct_time(entry.get("published_parsed")),
+                            published_at=published_at,
+                            score=freshness_score(published_at),
                         )
                     )
             except Exception as exc:  # one bad feed must not break the rest

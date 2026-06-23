@@ -15,8 +15,23 @@ export interface Item {
   source_type: SourceType;
   source_name: string;
   title: string;
+  /** Offline Chinese translation of the title; null when unavailable. */
+  title_zh: string | null;
   url: string;
   summary: string | null;
+  /** Offline Chinese translation of the summary; null when unavailable. */
+  summary_zh: string | null;
+  /**
+   * Full original body text from the source (plain text, HTML stripped by the
+   * backend). Only returned by the detail endpoint; null when the source has no
+   * body (e.g. a HN link-only post). Optional because list endpoints omit it.
+   */
+  content?: string | null;
+  /**
+   * Offline Chinese translation of `content`. Only returned by the detail
+   * endpoint; null when unavailable. Optional because list endpoints omit it.
+   */
+  content_zh?: string | null;
   author: string | null;
   category: CategoryKey;
   tags: string[];
@@ -72,6 +87,8 @@ export interface ItemsQuery {
   category?: CategoryKey;
   source_type?: string;
   featured?: boolean;
+  /** Free-text keyword search (backend filters title/summary). */
+  q?: string;
   page?: number;
   page_size?: number;
 }

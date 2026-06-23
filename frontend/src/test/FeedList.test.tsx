@@ -10,8 +10,10 @@ function makeItem(over: Partial<Item> = {}): Item {
     source_type: 'rss',
     source_name: 'OpenAI Blog',
     title: '示例标题',
+    title_zh: null,
     url: 'https://example.com/post',
     summary: '这是一段摘要文本。',
+    summary_zh: null,
     author: null,
     category: 'model',
     tags: ['llm', 'release'],
@@ -23,16 +25,22 @@ function makeItem(over: Partial<Item> = {}): Item {
 }
 
 describe('FeedList', () => {
-  it('renders each item title with an external link to the original url', () => {
+  it('links the title to the in-site detail page and keeps an external original link', () => {
     const items = [
       makeItem({ id: '1', title: '模型发布', url: 'https://a.test' }),
       makeItem({ id: '2', title: '产品更新', url: 'https://b.test', category: 'product' }),
     ];
     renderWithProviders(<FeedList items={items} grouped={false} />);
 
-    const link = screen.getByRole('link', { name: /模型发布/ });
-    expect(link).toHaveAttribute('href', 'https://a.test');
-    expect(link).toHaveAttribute('target', '_blank');
+    // The title now opens the in-site detail page (no target=_blank).
+    const titleLink = screen.getByRole('link', { name: /模型发布/ });
+    expect(titleLink).toHaveAttribute('href', '/item/1');
+    expect(titleLink).not.toHaveAttribute('target', '_blank');
+
+    // A small secondary "original" link still points to the source url.
+    const originalLinks = screen.getAllByRole('link', { name: /原文/ });
+    expect(originalLinks[0]).toHaveAttribute('href', 'https://a.test');
+    expect(originalLinks[0]).toHaveAttribute('target', '_blank');
     expect(screen.getByText('产品更新')).toBeInTheDocument();
   });
 

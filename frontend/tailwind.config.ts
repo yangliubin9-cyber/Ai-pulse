@@ -1,7 +1,8 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: ['class', "[data-theme='dark']"],
+  // Dark is the default theme; light is opt-in via [data-theme='light'].
+  darkMode: ['class', "[data-theme='light']"],
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     container: {
@@ -18,6 +19,10 @@ const config: Config = {
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+        },
         surface: {
           DEFAULT: 'hsl(var(--surface))',
           muted: 'hsl(var(--surface-muted))',

@@ -6,7 +6,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_db
-from app.schemas.feed_item import FeedItemListResponse, FeedItemOut
+from app.schemas.feed_item import (
+    FeedItemDetailOut,
+    FeedItemListResponse,
+    FeedItemOut,
+)
 from app.usecases.feed_usecase import FeedUsecase
 
 router = APIRouter(tags=["items"])
@@ -17,6 +21,7 @@ async def list_items(
     category: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
     featured: bool = Query(default=False),
+    q: str | None = Query(default=None, description="Fuzzy match on title/summary (ILIKE)"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     _user_id: str = Depends(get_current_user_id),
@@ -26,6 +31,7 @@ async def list_items(
         category=category,
         source_type=source_type,
         featured=featured,
+        q=q,
         page=page,
         page_size=page_size,
     )
@@ -37,11 +43,12 @@ async def list_items(
     )
 
 
-@router.get("/items/{item_id}", response_model=FeedItemOut)
+@router.get("/items/{item_id}", response_model=FeedItemDetailOut)
 async def get_item(
     item_id: str,
     _user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_db),
-) -> FeedItemOut:
+) -> FeedItemDetailOut:
+    # Detail view carries the full article body (content / content_zh); lists do not.
     item = await FeedUsecase(session).get_item(item_id)
-    return FeedItemOut.model_validate(item)
+    return FeedItemDetailOut.model_validate(item)

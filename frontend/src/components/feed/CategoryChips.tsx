@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
-import { CATEGORY_META, CATEGORY_ORDER } from '@/lib/constants';
+import { CATEGORY_ORDER, categoryLabel } from '@/lib/constants';
+import { useT } from '@/i18n/I18nProvider';
 import type { CategoryKey } from '@/lib/types';
 
 interface CategoryChipsProps {
@@ -8,24 +9,32 @@ interface CategoryChipsProps {
   counts?: Partial<Record<CategoryKey, number>>;
 }
 
-/** Horizontal filter chips: 全部 + each category. Left-aligned, dense. */
+/**
+ * Category filter rendered as a row of pill tabs: "All" + each category.
+ * The active pill is filled cyan; the rest are quiet outlined chips.
+ */
 export function CategoryChips({
   value,
   onChange,
   counts,
 }: CategoryChipsProps): React.JSX.Element {
+  const t = useT();
   return (
-    <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="分类筛选">
+    <div
+      className="flex flex-wrap items-center gap-2"
+      role="tablist"
+      aria-label={t('category.filter')}
+    >
       <Chip active={value === null} onClick={() => onChange(null)}>
-        全部
+        {t('common.all')}
       </Chip>
       {CATEGORY_ORDER.map((key) => {
         const count = counts?.[key];
         return (
           <Chip key={key} active={value === key} onClick={() => onChange(key)}>
-            {CATEGORY_META[key].label}
+            {categoryLabel(key, t)}
             {typeof count === 'number' && (
-              <span className="ml-1 text-[10px] opacity-60">{count}</span>
+              <span className="ml-1 text-[10px] opacity-70">{count}</span>
             )}
           </Chip>
         );
@@ -48,10 +57,10 @@ function Chip({ active, onClick, children }: ChipProps): React.JSX.Element {
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-150 ease-out',
+        'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-150 ease-out',
         active
-          ? 'border-accent bg-accent/12 text-accent'
-          : 'border-border bg-surface text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground',
+          ? 'bg-accent text-accent-foreground'
+          : 'border border-border bg-surface text-muted-foreground hover:border-accent/40 hover:text-foreground',
       )}
     >
       {children}

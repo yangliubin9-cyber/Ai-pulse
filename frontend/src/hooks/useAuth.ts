@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/api/endpoints';
-import { ApiError } from '@/api/client';
 import { queryKeys } from '@/api/queryKeys';
 import { useAuthStore } from '@/store/authStore';
 
@@ -59,23 +58,6 @@ export function useChangePassword() {
     mutationFn: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) =>
       authApi.changePassword(oldPassword, newPassword),
   });
-}
-
-/** Human-readable message for an auth error code. */
-export function authErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    switch (error.code) {
-      case 'AUTH_INVALID_CREDENTIALS':
-        return '邮箱或密码错误';
-      case 'AUTH_TOO_MANY_ATTEMPTS':
-        return '尝试次数过多，请稍后再试';
-      case 'UNAUTHORIZED':
-        return '当前密码不正确';
-      default:
-        return error.message || '操作失败，请重试';
-    }
-  }
-  return '网络异常，请检查连接后重试';
 }
 
 /** Returns a stable callback that clears auth and redirects to /login. */

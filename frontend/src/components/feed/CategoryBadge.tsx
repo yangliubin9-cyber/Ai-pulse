@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn';
-import { CATEGORY_META } from '@/lib/constants';
+import { CATEGORY_META, categoryLabel } from '@/lib/constants';
+import { useT } from '@/i18n/I18nProvider';
 import type { CategoryKey } from '@/lib/types';
 
 interface CategoryBadgeProps {
@@ -12,6 +13,7 @@ export function CategoryBadge({
   category,
   className,
 }: CategoryBadgeProps): React.JSX.Element {
+  const t = useT();
   const meta = CATEGORY_META[category] ?? CATEGORY_META.other;
   return (
     <span
@@ -24,7 +26,7 @@ export function CategoryBadge({
         backgroundColor: `hsl(var(--cat-${meta.colorVar}) / 0.12)`,
       }}
     >
-      {meta.label}
+      {categoryLabel(category, t)}
     </span>
   );
 }

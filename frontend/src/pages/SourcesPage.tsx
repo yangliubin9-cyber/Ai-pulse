@@ -5,14 +5,16 @@ import { FeedError, FeedEmpty } from '@/components/feed/FeedStates';
 import { useSources } from '@/hooks/useCatalog';
 import { relativeTime } from '@/lib/time';
 import { sourceTypeLabel } from '@/lib/constants';
+import { useI18n } from '@/i18n/I18nProvider';
 
 /** Read-only list of collection sources with per-source item counts. */
 export function SourcesPage(): React.JSX.Element {
+  const { lang, t } = useI18n();
   const { data, isPending, isError, error, refetch } = useSources();
 
   return (
     <div>
-      <PageHeader title="采集来源" description="当前接入的公开来源及各自的资讯条数。" />
+      <PageHeader title={t('pages.sources.title')} description={t('pages.sources.description')} />
 
       {isPending && (
         <div className="space-y-2">
@@ -25,7 +27,10 @@ export function SourcesPage(): React.JSX.Element {
       {isError && <FeedError error={error} onRetry={() => void refetch()} />}
 
       {data && data.length === 0 && (
-        <FeedEmpty title="暂无来源" description="尚未配置任何采集来源。" />
+        <FeedEmpty
+          title={t('pages.sources.emptyTitle')}
+          description={t('pages.sources.emptyDescription')}
+        />
       )}
 
       {data && data.length > 0 && (
@@ -41,14 +46,19 @@ export function SourcesPage(): React.JSX.Element {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{source.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {sourceTypeLabel(source.source_type)}
+                  {sourceTypeLabel(source.source_type, t)}
                   {source.last_fetch_at && (
-                    <span> · 最近采集 {relativeTime(source.last_fetch_at)}</span>
+                    <span>
+                      {' · '}
+                      {t('pages.sources.lastFetched', {
+                        time: relativeTime(source.last_fetch_at, lang),
+                      })}
+                    </span>
                   )}
                 </p>
               </div>
               <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                {source.count} 条
+                {t('pages.sources.itemCount', { count: source.count })}
               </span>
             </li>
           ))}

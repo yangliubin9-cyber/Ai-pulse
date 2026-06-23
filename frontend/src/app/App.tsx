@@ -7,6 +7,7 @@ import { setAuthExpiredHandler } from '@/api/client';
 import { useResolveSession } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
 import { initSystemThemeListener } from '@/store/themeStore';
+import { I18nProvider } from '@/i18n/I18nProvider';
 
 /** Bridges global side-effects: session resolve, 401 handler, theme listener. */
 function AppEffects(): null {
@@ -30,9 +31,11 @@ function AppEffects(): null {
 export function App(): React.JSX.Element {
   const queryClient = useMemo(() => createQueryClient(), []);
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppEffects />
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppEffects />
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </I18nProvider>
   );
 }

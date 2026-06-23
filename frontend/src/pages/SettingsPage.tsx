@@ -12,25 +12,29 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useThemeStore, type ThemeMode } from '@/store/themeStore';
-import { useChangePassword, authErrorMessage } from '@/hooks/useAuth';
+import { useChangePassword } from '@/hooks/useAuth';
 import { useIngestRun } from '@/hooks/useIngest';
 import { useStats } from '@/hooks/useCatalog';
 import { config } from '@/lib/config';
 import { relativeTime } from '@/lib/time';
+import { useI18n, useT, type TFn } from '@/i18n/I18nProvider';
+import { getErrorMessage } from '@/i18n/errors';
+import type { TKey } from '@/i18n';
 
 const MIN_PASSWORD = 8;
 
-const THEME_LABELS: Record<ThemeMode, string> = {
-  light: '亮色',
-  dark: '暗色',
-  system: '跟随系统',
+const THEME_KEYS: Record<ThemeMode, TKey> = {
+  light: 'theme.light',
+  dark: 'theme.dark',
+  system: 'theme.system',
 };
 
 /** Settings: theme, account security, manual ingest, and about. */
 export function SettingsPage(): React.JSX.Element {
+  const t = useT();
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title="设置" description="主题、账户安全与数据刷新。" />
+      <PageHeader title={t('settings.title')} description={t('settings.description')} />
       <div className="space-y-4">
         <ThemeSection />
         <RefreshSection />
@@ -42,24 +46,25 @@ export function SettingsPage(): React.JSX.Element {
 }
 
 function ThemeSection(): React.JSX.Element {
+  const t = useT();
   const mode = useThemeStore((s) => s.mode);
   const setMode = useThemeStore((s) => s.setMode);
   return (
     <Card>
       <CardHeader>
-        <CardTitle>主题</CardTitle>
+        <CardTitle>{t('settings.themeTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">界面外观</span>
+        <span className="text-sm text-muted-foreground">{t('settings.themeLabel')}</span>
         <div className="w-40">
           <Select value={mode} onValueChange={(v) => setMode(v as ThemeMode)}>
-            <SelectTrigger aria-label="主题模式">
+            <SelectTrigger aria-label={t('settings.themeMode')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(Object.keys(THEME_LABELS) as ThemeMode[]).map((m) => (
+              {(Object.keys(THEME_KEYS) as ThemeMode[]).map((m) => (
                 <SelectItem key={m} value={m}>
-                  {THEME_LABELS[m]}
+                  {t(THEME_KEYS[m])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -71,19 +76,25 @@ function ThemeSection(): React.JSX.Element {
 }
 
 function RefreshSection(): React.JSX.Element {
+  const { lang, t } = useI18n();
   const ingest = useIngestRun();
   const { data: stats } = useStats();
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>手动刷新资讯</CardTitle>
+        <CardTitle>{t('settings.refreshTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          立即从所有来源拉取最新资讯。
+          {t('settings.refreshHint')}
           {stats?.last_fetch_at && (
-            <span> 上次采集：{relativeTime(stats.last_fetch_at)}。</span>
+            <span>
+              {' '}
+              {t('settings.refreshLastFetch', {
+                time: relativeTime(stats.last_fetch_at, lang),
+              })}
+            </span>
           )}
         </p>
         <div className="flex items-center gap-3">
@@ -97,17 +108,20 @@ function RefreshSection(): React.JSX.Element {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            {ingest.isPending ? '刷新中…' : '刷新资讯'}
+            {ingest.isPending ? t('settings.refreshing') : t('settings.refresh')}
           </Button>
           {ingest.isSuccess && (
             <span className="inline-flex items-center gap-1.5 text-sm text-foreground">
               <CheckCircle2 className="h-4 w-4 text-cat-product" />
-              抓取 {ingest.data.fetched} 条，新增 {ingest.data.new} 条
+              {t('settings.refreshResult', {
+                fetched: ingest.data.fetched,
+                added: ingest.data.new,
+              })}
             </span>
           )}
           {ingest.isError && (
             <span className="text-sm text-destructive">
-              {authErrorMessage(ingest.error)}
+              {getErrorMessage(ingest.error, t)}
             </span>
           )}
         </div>
@@ -117,6 +131,7 @@ function RefreshSection(): React.JSX.Element {
 }
 
 function PasswordSection(): React.JSX.Element {
+  const t = useT();
   const changePassword = useChangePassword();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -128,15 +143,15 @@ function PasswordSection(): React.JSX.Element {
     setLocalError(null);
 
     if (newPassword.length < MIN_PASSWORD) {
-      setLocalError(`新密码至少 ${MIN_PASSWORD} 位`);
+      setLocalError(t('settings.minError', { min: MIN_PASSWORD }));
       return;
     }
     if (newPassword !== confirm) {
-      setLocalError('两次输入的新密码不一致');
+      setLocalError(t('settings.mismatch'));
       return;
     }
     if (newPassword === oldPassword) {
-      setLocalError('新密码不能与当前密码相同');
+      setLocalError(t('settings.sameAsOld'));
       return;
     }
 
@@ -155,13 +170,13 @@ function PasswordSection(): React.JSX.Element {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>修改密码</CardTitle>
+        <CardTitle>{t('settings.passwordTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form className="space-y-3" onSubmit={handleSubmit} noValidate>
           <div className="space-y-1.5">
             <label htmlFor="old-password" className="text-sm font-medium">
-              当前密码
+              {t('settings.oldPassword')}
             </label>
             <Input
               id="old-password"
@@ -174,7 +189,7 @@ function PasswordSection(): React.JSX.Element {
           </div>
           <div className="space-y-1.5">
             <label htmlFor="new-password" className="text-sm font-medium">
-              新密码
+              {t('settings.newPassword')}
             </label>
             <Input
               id="new-password"
@@ -184,11 +199,13 @@ function PasswordSection(): React.JSX.Element {
               onChange={(e) => setNewPassword(e.target.value)}
               required
             />
-            <p className="text-xs text-muted-foreground">至少 {MIN_PASSWORD} 位</p>
+            <p className="text-xs text-muted-foreground">
+              {t('settings.minHint', { min: MIN_PASSWORD })}
+            </p>
           </div>
           <div className="space-y-1.5">
             <label htmlFor="confirm-password" className="text-sm font-medium">
-              确认新密码
+              {t('settings.confirmPassword')}
             </label>
             <Input
               id="confirm-password"
@@ -207,19 +224,19 @@ function PasswordSection(): React.JSX.Element {
           )}
           {changePassword.isError && (
             <p className="text-sm text-destructive" role="alert">
-              {authErrorMessage(changePassword.error)}
+              {getErrorMessage(changePassword.error, t)}
             </p>
           )}
           {changePassword.isSuccess && (
             <p className="inline-flex items-center gap-1.5 text-sm text-foreground">
               <CheckCircle2 className="h-4 w-4 text-cat-product" />
-              密码已更新
+              {t('settings.passwordUpdated')}
             </p>
           )}
 
           <Button type="submit" disabled={changePassword.isPending}>
             {changePassword.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            更新密码
+            {t('settings.updatePassword')}
           </Button>
         </form>
       </CardContent>
@@ -228,38 +245,48 @@ function PasswordSection(): React.JSX.Element {
 }
 
 function AboutSection(): React.JSX.Element {
+  const t = useT();
   const { data: stats } = useStats();
   return (
     <Card>
       <CardHeader>
-        <CardTitle>关于</CardTitle>
+        <CardTitle>{t('settings.aboutTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm text-muted-foreground">
         <div className="flex justify-between">
-          <span>版本</span>
+          <span>{t('settings.version')}</span>
           <span className="tabular-nums text-foreground">v{config.version}</span>
         </div>
         {stats && (
           <>
             <div className="flex justify-between">
-              <span>资讯总量</span>
-              <span className="tabular-nums text-foreground">{stats.total_items} 条</span>
+              <span>{t('settings.totalItems')}</span>
+              <span className="tabular-nums text-foreground">
+                {t('settings.itemUnit', { count: stats.total_items })}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span>来源数量</span>
-              <span className="tabular-nums text-foreground">{stats.sources} 个</span>
+              <span>{t('settings.sourceCount')}</span>
+              <span className="tabular-nums text-foreground">
+                {t('settings.sourceUnit', { count: stats.sources })}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span>时间窗口</span>
-              <span className="tabular-nums text-foreground">近 {stats.window_days} 天</span>
+              <span>{t('settings.timeWindow')}</span>
+              <span className="tabular-nums text-foreground">
+                {t('settings.windowDays', { days: stats.window_days })}
+              </span>
             </div>
           </>
         )}
         <p className="pt-2 leading-relaxed">
-          {config.appName} 仅聚合公开来源（官方 RSS 博客、Hacker News、arXiv）发布的标题与摘要，
-          保留原文出处与链接，不转载第三方编辑的精选内容，不抓取站点数据。
+          {aboutText(t)}
         </p>
       </CardContent>
     </Card>
   );
+}
+
+function aboutText(t: TFn): string {
+  return t('settings.aboutText', { appName: config.appName });
 }

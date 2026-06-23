@@ -18,9 +18,16 @@ class FeedItem(Base):
     source_type: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     source_name: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
+    title_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
     url: Mapped[str] = mapped_column(String(1024), nullable=False)
     url_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    summary_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Full article body as published by the source itself (RSS content:encoded /
+    # content / summary, arXiv abstract), HTML-cleaned. NULL when the source gives
+    # no body (e.g. Hacker News). content_zh is its Chinese translation.
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
     author: Mapped[str | None] = mapped_column(String(256), nullable=True)
     category: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)

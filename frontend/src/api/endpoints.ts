@@ -18,6 +18,7 @@ export const itemsApi = {
         category: params.category,
         source_type: params.source_type,
         featured: params.featured,
+        q: params.q,
         page: params.page,
         page_size: params.page_size,
       },

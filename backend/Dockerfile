@@ -19,7 +19,8 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
-    OBJECT_STORAGE_LOCAL_PATH=/data/storage
+    OBJECT_STORAGE_LOCAL_PATH=/data/storage \
+    ARGOS_PACKAGES_DIR=/opt/argos-packages
 WORKDIR /app
 
 # Non-root user
@@ -29,6 +30,13 @@ RUN groupadd -g 10001 appuser \
  && chown -R 10001:10001 /data /app
 
 COPY --from=builder /opt/venv /opt/venv
+
+# Bake the offline en->zh translation model into the image so no download happens
+# at runtime (required for air-gapped private delivery). Stored under
+# ARGOS_PACKAGES_DIR and owned by the non-root runtime user.
+RUN mkdir -p /opt/argos-packages \
+ && python -c "import argostranslate.package as p; p.update_package_index(); pk=next(x for x in p.get_available_packages() if x.from_code=='en' and x.to_code=='zh'); p.install_from_path(pk.download())" \
+ && chown -R 10001:10001 /opt/argos-packages
 # App code last (changes most often) -- no reinstall.
 COPY --chown=10001:10001 . /app
 

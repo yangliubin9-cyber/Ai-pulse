@@ -101,7 +101,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     throw new ApiError(
       response.status,
       err?.code ?? 'UNKNOWN',
-      err?.message ?? `请求失败（${response.status}）`,
+      // No localization here (framework-agnostic): keep the backend message, or
+      // leave empty so the React layer can render a localized fallback.
+      err?.message ?? '',
       err?.request_id ?? null,
     );
   }

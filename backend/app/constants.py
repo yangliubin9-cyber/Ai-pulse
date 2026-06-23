@@ -44,23 +44,32 @@ SOURCE_TYPES = (SOURCE_TYPE_RSS, SOURCE_TYPE_HN, SOURCE_TYPE_ARXIV)
 # ---------------------------------------------------------------------------
 KEYWORDS_MODEL = [
     "model", "gpt", "llm", "transformer", "weights", "parameter", "checkpoint",
-    "fine-tune", "fine tune", "foundation model", "multimodal",
-    "模型", "参数", "大模型", "权重",
+    "fine-tune", "fine tune", "fine-tuning", "fine tuning", "pretrain", "pretrained",
+    "pre-train", "foundation model", "multimodal", "diffusion", "embedding",
+    "quantization", "quantized", "distillation", "mixture of experts", "moe",
+    "claude", "gemini", "llama", "mistral", "qwen", "deepseek",
+    "模型", "参数", "大模型", "权重", "微调", "蒸馏", "量化", "预训练",
 ]
 KEYWORDS_PRODUCT = [
-    "launch", "launches", "release", "released", "product", "api", "app",
-    "available", "introducing", "now in", "ga ", "general availability",
-    "发布", "上线", "产品", "推出", "正式", "开放",
+    "launch", "launches", "launched", "release", "released", "releases", "product",
+    "api", "app", "available", "availability", "introducing", "introduces",
+    "now in", "ga ", "general availability", "open source", "open-source",
+    "opensource", "preview", "beta", "rollout", "ship", "ships", "shipped",
+    "发布", "上线", "产品", "推出", "正式", "开放", "开源", "上市", "公测", "内测",
 ]
 KEYWORDS_INDUSTRY = [
-    "funding", "raise", "raises", "acquire", "acquisition", "ipo", "valuation",
-    "policy", "regulation", "market", "lawsuit", "antitrust", "invest",
-    "融资", "收购", "政策", "行业", "市场", "监管", "投资",
+    "funding", "fund", "raise", "raises", "raised", "acquire", "acquisition",
+    "acquires", "ipo", "valuation", "policy", "regulation", "regulatory", "market",
+    "lawsuit", "antitrust", "invest", "investment", "investor", "startup",
+    "partnership", "layoff", "revenue",
+    "融资", "收购", "政策", "行业", "市场", "监管", "投资", "创业", "估值", "合作",
 ]
 KEYWORDS_TECHNIQUE = [
-    "how to", "tutorial", "guide", "prompt", "prompting", "technique", "tips",
-    "best practices", "rag", "agent", "workflow",
-    "技巧", "教程", "实践", "提示词", "指南",
+    "how to", "tutorial", "guide", "prompt", "prompting", "prompt engineering",
+    "technique", "tips", "best practices", "rag", "retrieval", "agent", "agents",
+    "agentic", "workflow", "benchmark", "benchmarks", "dataset", "datasets",
+    "evaluation", "eval", "reasoning", "inference", "chain of thought", "context window",
+    "技巧", "教程", "实践", "提示词", "指南", "推理", "智能体", "数据集", "评测", "基准",
 ]
 
 # Keyword groups used both for classification and tag extraction.

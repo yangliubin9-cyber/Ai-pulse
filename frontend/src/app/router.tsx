@@ -6,6 +6,11 @@ import { FeaturedPage } from '@/pages/FeaturedPage';
 import { AllPage } from '@/pages/AllPage';
 import { DailyPage } from '@/pages/DailyPage';
 import { SourcesPage } from '@/pages/SourcesPage';
+import { ItemDetailPage } from '@/pages/ItemDetailPage';
+import { AgentPage } from '@/pages/AgentPage';
+import { AboutPage } from '@/pages/AboutPage';
+import { ChangelogPage } from '@/pages/ChangelogPage';
+import { FeedbackPage } from '@/pages/FeedbackPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -26,6 +31,11 @@ export const router = createBrowserRouter([
       { path: 'all', element: <AllPage /> },
       { path: 'daily', element: <DailyPage /> },
       { path: 'sources', element: <SourcesPage /> },
+      { path: 'item/:id', element: <ItemDetailPage /> },
+      { path: 'agent', element: <AgentPage /> },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'changelog', element: <ChangelogPage /> },
+      { path: 'feedback', element: <FeedbackPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

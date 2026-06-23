@@ -1,45 +1,57 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { useThemeStore, type ThemeMode } from '@/store/themeStore';
+import { useT } from '@/i18n/I18nProvider';
+import type { TKey } from '@/i18n';
 import { cn } from '@/lib/cn';
 
-const OPTIONS: Array<{ mode: ThemeMode; label: string; icon: typeof Sun }> = [
-  { mode: 'light', label: '亮色', icon: Sun },
-  { mode: 'dark', label: '暗色', icon: Moon },
-  { mode: 'system', label: '跟随系统', icon: Monitor },
+const OPTIONS: Array<{ mode: ThemeMode; labelKey: TKey; icon: typeof Sun }> = [
+  { mode: 'light', labelKey: 'theme.light', icon: Sun },
+  { mode: 'dark', labelKey: 'theme.dark', icon: Moon },
+  { mode: 'system', labelKey: 'theme.system', icon: Monitor },
 ];
 
-/** Theme switcher: light / dark / system. */
-export function ThemeToggle(): React.JSX.Element {
+/**
+ * Theme switcher rendered as a row of three small icon buttons
+ * (light / dark / system). Designed for the sidebar footer; the active
+ * mode gets a cyan-tinted pill.
+ */
+export function ThemeToggle({ className }: { className?: string }): React.JSX.Element {
   const mode = useThemeStore((s) => s.mode);
   const setMode = useThemeStore((s) => s.setMode);
-  const Active = OPTIONS.find((o) => o.mode === mode)?.icon ?? Monitor;
+  const t = useT();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="切换主题">
-          <Active className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {OPTIONS.map(({ mode: m, label, icon: Icon }) => (
-          <DropdownMenuItem
+    <div
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 p-0.5',
+        className,
+      )}
+      role="radiogroup"
+      aria-label={t('theme.toggle')}
+    >
+      {OPTIONS.map(({ mode: m, labelKey, icon: Icon }) => {
+        const active = m === mode;
+        const label = t(labelKey);
+        return (
+          <button
             key={m}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={label}
+            title={label}
             onClick={() => setMode(m)}
-            className={cn(m === mode && 'text-accent')}
+            className={cn(
+              'grid h-7 w-7 place-items-center rounded-md transition-colors duration-150 ease-out',
+              active
+                ? 'bg-accent/20 text-accent'
+                : 'text-sidebar-foreground hover:bg-white/10 hover:text-white',
+            )}
           >
             <Icon className="h-4 w-4" />
-            {label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </button>
+        );
+      })}
+    </div>
   );
 }

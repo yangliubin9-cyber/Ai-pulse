@@ -18,3 +18,6 @@ export function useItemDetail(id: string | undefined) {
     enabled: Boolean(id),
   });
 }
+
+/** Alias for {@link useItemDetail}: fetch one item by id (GET /items/{id}). */
+export const useItem = useItemDetail;
