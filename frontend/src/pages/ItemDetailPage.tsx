@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, ChevronRight, Languages, FileQuestion } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ChevronRight, Languages, FileQuestion, Sparkles } from 'lucide-react';
 import { SourceAvatar } from '@/components/feed/SourceAvatar';
 import { CategoryBadge } from '@/components/feed/CategoryBadge';
 import { ScoreBadge } from '@/components/feed/ScoreBadge';
+import { InlineMarkdown } from '@/components/feed/InlineMarkdown';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeedError, FeedEmpty } from '@/components/feed/FeedStates';
@@ -12,6 +13,7 @@ import { ApiError } from '@/api/client';
 import { relativeTime } from '@/lib/time';
 import { sourceTypeLabel } from '@/lib/constants';
 import { displayTitle, displayBody, hasTranslation, hasBody } from '@/lib/display';
+import { splitParagraphs } from '@/lib/paragraphs';
 import { useI18n } from '@/i18n/I18nProvider';
 
 /** In-site reading page for a single item (GET /items/{id}). */
@@ -38,9 +40,12 @@ export function ItemDetailPage(): React.JSX.Element {
   // Whether the item actually carries a full body (vs. only a summary). Drives
   // the "Article" vs. summary-only heading and the source attribution note.
   const itemHasBody = item != null && hasBody(item);
+  // Editorial recommendation note (Chinese only). Shown in its own emphasized
+  // box whenever present, regardless of the original/translation toggle.
+  const reason = item?.reason_zh?.trim() ? item.reason_zh : null;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl px-4 pb-24 sm:px-0">
       {/* Back + breadcrumb */}
       <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
         <button
@@ -86,12 +91,12 @@ export function ItemDetailPage(): React.JSX.Element {
       {!isPending && item && (
         <article data-testid="item-detail">
           {/* Title */}
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight sm:text-[30px]">
+          <h1 className="text-2xl font-semibold leading-snug tracking-tight sm:text-[30px]">
             {title}
           </h1>
 
           {/* Byline: avatar · source · @handle · time · heat */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
+          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
             <SourceAvatar name={item.source_name} />
             <span className="font-medium text-foreground">{item.source_name}</span>
             {item.author && <span>@{item.author}</span>}
@@ -109,7 +114,7 @@ export function ItemDetailPage(): React.JSX.Element {
           </div>
 
           {/* Category + tags */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <div className="mt-4 flex flex-wrap items-center gap-1.5">
             <CategoryBadge category={item.category} />
             {item.tags.map((tag) => (
               <span
@@ -121,9 +126,31 @@ export function ItemDetailPage(): React.JSX.Element {
             ))}
           </div>
 
-          {/* Body */}
-          <section className="mt-6">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          {/* Recommendation note — an emphasized editorial callout box, shown
+              only when reason_zh is present. Accent-tinted, rounded, labelled.
+              reason_zh may contain inline markdown bold, rendered XSS-safely. */}
+          {reason && (
+            <section
+              className="mt-8 overflow-hidden rounded-xl border border-accent/40 bg-accent/[0.07]"
+              data-testid="reason-box"
+            >
+              <div className="flex items-center gap-1.5 border-b border-accent/25 bg-accent/10 px-4 py-2">
+                <Sparkles className="h-3.5 w-3.5 text-accent" aria-hidden />
+                <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                  {t('pages.detail.reasonTitle')}
+                </span>
+              </div>
+              <InlineMarkdown
+                text={reason}
+                className="space-y-2 px-4 py-3.5 text-[15px] leading-[1.8] text-foreground/90"
+              />
+            </section>
+          )}
+
+          {/* Body box — AI summary / article. Skipped entirely when the source
+              carries no body (HN link-only), in which case a hint is shown. */}
+          <section className="mt-8">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {itemHasBody ? t('pages.detail.bodyTitleFull') : t('pages.detail.bodyTitle')}
               </h2>
@@ -151,16 +178,19 @@ export function ItemDetailPage(): React.JSX.Element {
               </div>
             </div>
             {body ? (
-              <ArticleBody text={body} />
+              <div data-testid="body-box">
+                {/* Open flowing article — no card border/box around long-form text. */}
+                <ArticleBody text={body} />
+                {/* Source attribution note shown only for transcribed full bodies. */}
+                {itemHasBody && (
+                  <p className="mt-10 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+                    {t('pages.detail.bodySourceNote')}
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="rounded-lg border border-dashed border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
                 {t('pages.detail.noSummary')}
-              </p>
-            )}
-            {/* Source attribution note shown only for transcribed full bodies. */}
-            {itemHasBody && body && (
-              <p className="mt-4 text-xs text-muted-foreground">
-                {t('pages.detail.bodySourceNote')}
               </p>
             )}
           </section>
@@ -193,28 +223,35 @@ export function ItemDetailPage(): React.JSX.Element {
 }
 
 /**
- * Renders the full article body as plain text. The text comes from the source
- * (HTML already stripped by the backend); we render it as text only — never via
- * dangerouslySetInnerHTML — to avoid XSS. Blank-line-separated blocks become
- * paragraphs; single newlines inside a paragraph are preserved via
- * `whitespace-pre-wrap`. `max-w-prose` keeps a readable line length.
+ * Renders the full article body as plain text, tuned for comfortable long-form
+ * reading of (often machine-translated) Chinese prose. The text comes from the
+ * source (HTML already stripped by the backend); we render it as text only —
+ * never via dangerouslySetInnerHTML — to avoid XSS.
+ *
+ * Paragraphs come from `splitParagraphs`: existing blank-line / newline
+ * structure is respected, while a long unbroken wall of text (the common
+ * machine-translation shape) is soft-split at sentence boundaries for display
+ * only. Single newlines inside a paragraph are preserved via
+ * `whitespace-pre-wrap`.
+ *
+ * Reading layout: ~42em column (`max-w-[42em]`) for a comfortable Chinese line
+ * length, 16px body text at a relaxed 1.8 line-height, full foreground colour
+ * (not muted) so long reads don't strain the eyes, and ~1em paragraph spacing
+ * to separate paragraphs without first-line indentation.
  */
 function ArticleBody({ text }: { text: string }): React.JSX.Element {
-  const paragraphs = text
-    .split(/\n\s*\n/)
-    .map((block) => block.trim())
-    .filter((block) => block.length > 0);
+  const paragraphs = splitParagraphs(text);
 
-  // Fallback: a body with no blank-line breaks still renders as one block.
+  // Fallback: a body that produced no paragraphs still renders as one block.
   const blocks = paragraphs.length > 0 ? paragraphs : [text];
 
   return (
     <div
-      className="max-w-prose space-y-4 text-[15px] leading-relaxed text-foreground/90"
+      className="space-y-5 text-[17px] leading-[1.9] tracking-[0.01em] text-foreground/95"
       data-testid="article-body"
     >
       {blocks.map((block, i) => (
-        <p key={i} className="whitespace-pre-wrap">
+        <p key={i} className="whitespace-pre-wrap break-words">
           {block}
         </p>
       ))}

@@ -35,6 +35,30 @@ spec:
               value: {{ .Values.tz | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.logging.level | quote }}
+            # LLM 内容增强（可选；默认关）。非敏感项直接注入；api key 走 existingSecret。
+            - name: LLM_ENABLED
+              value: {{ .Values.llm.enabled | quote }}
+            - name: LLM_PROVIDER
+              value: {{ .Values.llm.provider | quote }}
+            - name: LLM_BASE_URL
+              value: {{ .Values.llm.baseUrl | quote }}
+            - name: LLM_MODEL
+              value: {{ .Values.llm.model | quote }}
+            - name: LLM_TIMEOUT_SECONDS
+              value: {{ .Values.llm.timeoutSeconds | quote }}
+            - name: LLM_MAX_TOKENS
+              value: {{ .Values.llm.maxTokens | quote }}
+            - name: LLM_TEMPERATURE
+              value: {{ .Values.llm.temperature | quote }}
+            - name: LLM_CONCURRENCY
+              value: {{ .Values.llm.concurrency | quote }}
+            {{- if .Values.llm.existingSecret }}
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.llm.existingSecret }}
+                  key: LLM_API_KEY
+            {{- end }}
             # TODO(bootstrap): DB_* / CACHE_* 等其余字段经 configmap/secret 注入（补齐集补 configmap.yaml/secret.yaml）
           livenessProbe:
             httpGet: { path: /healthz/live, port: 8000 }

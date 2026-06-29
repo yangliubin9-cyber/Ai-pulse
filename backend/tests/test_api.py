@@ -23,7 +23,7 @@ async def _seed_admin(sessionmaker_fx):
         await s.commit()
 
 
-def _item(title, *, summary="", score=None, source_type="rss", category="other", hours_ago=1):
+def _item(title, *, summary="", content=None, score=None, source_type="rss", category="other", hours_ago=1):
     published = datetime.now(timezone.utc) - timedelta(hours=hours_ago)
     url = f"https://example.com/{title.replace(' ', '-')}"
     return FeedItem(
@@ -33,6 +33,8 @@ def _item(title, *, summary="", score=None, source_type="rss", category="other",
         url=url,
         url_hash=url_hash(url),
         summary=summary,
+        # featured 过滤要求 content 非空（见 feed_item_repo），默认回退到 summary
+        content=content if content is not None else (summary or title),
         category=category,
         tags=[],
         score=score,

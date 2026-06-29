@@ -17,6 +17,16 @@ services:
       CACHE_HOST: redis
       CACHE_PORT: "6379"
       OBJECT_STORAGE_LOCAL_PATH: /data/storage
+      # LLM 内容增强（可选；默认关，留空即走离线翻译）。值取自 .env，这里显式透传以便审计。
+      LLM_ENABLED: ${LLM_ENABLED:-false}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai-compatible}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2048}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.3}
+      LLM_CONCURRENCY: ${LLM_CONCURRENCY:-2}
     ports:
       - "${BACKEND_PORT}:8000"
     volumes:

@@ -31,6 +31,12 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
   const detailPath = itemPath(item.id);
   const title = displayTitle(item, lang);
   const summary = displaySummary(item, lang);
+  // Editorial note shown as a low-key strip. Markdown bold markers are stripped
+  // to plain text here (the card is a compact, clamped preview); the full,
+  // emphasized rendering lives on the detail page.
+  const reason = item.reason_zh?.trim()
+    ? item.reason_zh.replace(/\*\*/g, '').trim()
+    : null;
 
   return (
     <article
@@ -70,6 +76,22 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
             >
               {summary}
             </Link>
+          )}
+
+          {/* Recommendation strip — a low-key editorial note with a left accent
+              bar and a small label, shown only when reason_zh is present. */}
+          {reason && (
+            <div
+              className="mt-2.5 rounded-md border-l-2 border-accent/60 bg-accent/[0.06] py-1 pl-2.5 pr-2"
+              data-testid="card-reason"
+            >
+              <span className="mr-1.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-accent">
+                {t('card.reason')}
+              </span>
+              <span className="align-middle text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                {reason}
+              </span>
+            </div>
           )}
         </div>
 
