@@ -36,7 +36,8 @@ export function FeedList({ items, grouped = true }: FeedListProps): React.JSX.El
     <div className="animate-fade-in space-y-7">
       {groups.map((group) => (
         <section key={group.key}>
-          <h2 className="sticky top-0 z-10 mb-3 -mx-1 bg-background/90 px-1 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur lg:top-0">
+          <h2 className="sticky top-0 z-10 mb-3 -mx-1 flex items-center gap-2 bg-background/85 px-1 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground backdrop-blur lg:top-0">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
             {group.label}
           </h2>
           <div className="space-y-3">
@@ -63,8 +64,8 @@ const TimelineRow = memo(function TimelineRow({ item }: { item: Item }): React.J
         </time>
       </div>
       <div className="relative flex shrink-0 justify-center" aria-hidden>
-        <span className="absolute inset-y-0 w-px bg-border" />
-        <span className="mt-4 h-2 w-2 rounded-full border-2 border-accent bg-background" />
+        <span className="absolute inset-y-0 w-px bg-gradient-to-b from-border/40 via-border to-border/40" />
+        <span className="mt-[18px] h-2 w-2 rounded-full border-2 border-accent bg-background ring-4 ring-background" />
       </div>
       <div className="min-w-0 flex-1 pb-1">
         <ItemCard item={item} />

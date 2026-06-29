@@ -386,6 +386,122 @@ def test_tidy_cjk_only_changes_whitespace():
     assert out.replace(" ", "") == raw.replace(" ", "")
 
 
+# --- normalize_cjk_punct (half-width -> full-width in Chinese context) -------
+
+from app.services.translation.format import normalize_cjk_punct  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        # Sentence-final period adjacent to Chinese -> full-width.
+        ("物理结果.", "物理结果。"),
+        # Comma between Chinese clauses -> full-width.
+        ("获得,但", "获得，但"),
+        # Colon introducing the next clause -> full-width.
+        ("很难获得:远程", "很难获得：远程"),
+        # Mark whose only Chinese neighbour is the *following* char still converts.
+        ("AutoDex,我们", "AutoDex，我们"),
+        # Other marks: semicolon / bang / question.
+        ("第一;第二", "第一；第二"),
+        ("太强了!", "太强了！"),
+        ("是吗?好的", "是吗？好的"),
+    ],
+)
+def test_normalize_punct_converts_in_chinese_context(raw, expected):
+    assert normalize_cjk_punct(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "3,593",      # thousands separator
+        "10.3",       # decimal
+        "v1.0",       # version with embedded decimal
+        "12:00",      # time
+        "3:1",        # ratio
+    ],
+)
+def test_normalize_punct_digit_guard_keeps_halfwidth(raw):
+    # Pure numeric tokens (no Chinese neighbour anyway) are untouched...
+    assert normalize_cjk_punct(raw) == raw
+    # ...and even when wrapped in Chinese, the digit-flanked mark stays half-width.
+    wrapped = f"约{raw}个"
+    assert raw in normalize_cjk_punct(wrapped)
+
+
+def test_normalize_punct_digit_guard_inside_chinese_sentence():
+    raw = "训练用了3,593张图,精度10.3%。"
+    out = normalize_cjk_punct(raw)
+    assert "3,593" in out          # thousands separator preserved
+    assert "10.3" in out           # decimal preserved
+    assert "张图，精度" in out      # the inter-clause comma went full-width
+
+
+def test_normalize_punct_url_guard_keeps_url_intact():
+    raw = "见 https://arxiv.org/abs/2606.23689v1 获取详情。"
+    out = normalize_cjk_punct(raw)
+    assert "https://arxiv.org/abs/2606.23689v1" in out  # . : / untouched
+
+
+def test_normalize_punct_email_guard():
+    raw = "联系 author@example.com 获取数据。"
+    out = normalize_cjk_punct(raw)
+    assert "author@example.com" in out
+
+
+def test_normalize_punct_brackets_adjacent_to_chinese():
+    assert normalize_cjk_punct("(感知,执行,和重置)") == "（感知，执行，和重置）"
+
+
+def test_normalize_punct_pure_english_unchanged():
+    raw = "We propose AutoDex, a system."
+    assert normalize_cjk_punct(raw) == raw
+
+
+def test_normalize_punct_idempotent_on_fullwidth():
+    text = "很难获得：远程操作产生有效的物理结果，但仍需改进。"
+    assert normalize_cjk_punct(text) == text
+
+
+@pytest.mark.parametrize("falsy", [None, ""])
+def test_normalize_punct_passthrough_falsy(falsy):
+    assert normalize_cjk_punct(falsy) == falsy
+
+
+def test_normalize_punct_does_not_touch_hyphen_or_slash():
+    # Hyphen / slash inside Chinese context are deliberately left alone.
+    raw = "端到端-训练 与 输入/输出"
+    out = normalize_cjk_punct(raw)
+    assert "-" in out and "/" in out
+
+
+def test_normalize_then_tidy_chained_no_space_around_fullwidth():
+    # The production pipeline order: normalize first, then tidy whitespace.
+    raw = "远程操作产生有效的物理结果, 但很难获得 : 远程"
+    out = tidy_cjk(normalize_cjk_punct(raw))
+    assert out == "远程操作产生有效的物理结果，但很难获得：远程"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        # Runs where a mark's neighbour only becomes CJK after an earlier mark
+        # converts -- exercises the fixed-point loop (must fully converge in one
+        # call so a re-run changes nothing).
+        "（中文（简体）). 内容",       # ) then . then 内容
+        "互动。..。。机器人",            # mixed full/half stops collapsing rightward
+        "解码框架，即加速。.. 内容",      # 。 then .. before Chinese
+        "expr!() 宏",                   # ! then () adjacent to 宏
+    ],
+)
+def test_normalize_punct_converges_and_is_idempotent(raw):
+    once = normalize_cjk_punct(raw)
+    assert normalize_cjk_punct(once) == once  # fixed point reached in one call
+    # No half-width period/comma/colon left wedged against CJK or full-width punct.
+    assert ".)" not in once and "). " not in once
+
+
 # --- backfill translation cache (same text translated once) -----------------
 
 class _CountingTranslator(Translator):

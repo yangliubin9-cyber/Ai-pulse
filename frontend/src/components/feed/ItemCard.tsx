@@ -40,7 +40,7 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
 
   return (
     <article
-      className="group rounded-xl border border-border bg-surface p-4 transition-colors duration-200 ease-out hover:border-accent/40 hover:bg-surface-muted"
+      className="group surface-card surface-card-hover relative rounded-xl border border-border bg-surface p-4 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface"
       data-testid="item-card"
     >
       {/* Header row: avatar · source · @handle · heat badge */}
@@ -59,10 +59,10 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
 
       <div className="flex gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-semibold leading-snug">
+          <h3 className="text-[15px] font-semibold leading-snug tracking-tight">
             <Link
               to={detailPath}
-              className="inline-flex items-baseline gap-1 text-foreground decoration-accent/40 decoration-2 underline-offset-2 hover:text-accent hover:underline"
+              className="inline-flex items-baseline gap-1 text-foreground decoration-accent/40 decoration-2 underline-offset-2 transition-colors duration-150 hover:text-accent hover:underline"
               title={t('card.viewDetail')}
             >
               <span>{title}</span>
@@ -72,7 +72,7 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
           {summary && (
             <Link
               to={detailPath}
-              className="mt-1.5 block line-clamp-3 text-sm leading-relaxed text-muted-foreground hover:text-foreground"
+              className="mt-1.5 block line-clamp-2 text-[13px] leading-relaxed text-muted-foreground transition-colors duration-150 hover:text-foreground"
             >
               {summary}
             </Link>
@@ -82,13 +82,13 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
               bar and a small label, shown only when reason_zh is present. */}
           {reason && (
             <div
-              className="mt-2.5 rounded-md border-l-2 border-accent/60 bg-accent/[0.06] py-1 pl-2.5 pr-2"
+              className="mt-2.5 flex gap-2 rounded-md border-l-2 border-accent/60 bg-accent/[0.06] py-1.5 pl-2.5 pr-2"
               data-testid="card-reason"
             >
-              <span className="mr-1.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-accent">
+              <span className="mt-px shrink-0 text-[10px] font-semibold uppercase tracking-wide text-accent">
                 {t('card.reason')}
               </span>
-              <span className="align-middle text-xs leading-relaxed text-muted-foreground line-clamp-2">
+              <span className="text-xs leading-relaxed text-muted-foreground line-clamp-2">
                 {reason}
               </span>
             </div>
@@ -102,18 +102,18 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
               alt=""
               loading="lazy"
               onError={() => setImageOk(false)}
-              className="h-16 w-24 rounded-lg border border-border object-cover sm:h-20 sm:w-28"
+              className="h-16 w-24 rounded-lg border border-border object-cover ring-1 ring-inset ring-black/5 sm:h-20 sm:w-28"
             />
           </Link>
         )}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <CategoryBadge category={item.category} />
         {item.tags.slice(0, 5).map((tag) => (
           <span
             key={tag}
-            className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground"
+            className="rounded-md border border-border/70 px-1.5 py-0.5 text-[10.5px] font-medium leading-none text-muted-foreground"
           >
             {tag}
           </span>

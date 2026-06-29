@@ -19,7 +19,7 @@ from typing import Any
 import structlog
 
 from app.services.translation.base import Translator as TranslatorBase
-from app.services.translation.format import tidy_cjk
+from app.services.translation.format import normalize_cjk_punct, tidy_cjk
 from app.services.translation.glossary import protect, restore
 
 logger = structlog.get_logger(__name__)
@@ -130,9 +130,12 @@ class Translator(TranslatorBase):
             translated = argostranslate.translate.translate(protected, from_code, to_code)
             out_parts.append(restore(translated, mapping))
         joined = " ".join(p.strip() for p in out_parts if p.strip())
-        # Typeset the MT output (spacing around CJK / Latin / punctuation) so the
-        # stored translation reads cleanly. tidy_cjk only touches whitespace.
-        return tidy_cjk(joined) or ""
+        # Typeset the MT output: first convert ASCII punctuation that sits in
+        # Chinese context to its full-width form (digits / URLs guarded), then
+        # tidy whitespace around CJK / Latin / punctuation so the stored
+        # translation reads cleanly. Order matters: normalize_cjk_punct may emit
+        # new full-width marks, and tidy_cjk then strips any space hugging them.
+        return tidy_cjk(normalize_cjk_punct(joined)) or ""
 
     @staticmethod
     def _segment(text: str) -> list[str]:

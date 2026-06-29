@@ -28,7 +28,7 @@ export function SourceAvatar({
   return (
     <span
       className={cn(
-        'grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold ring-1 ring-inset ring-white/10',
+        'grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold ring-1 ring-inset ring-black/5 dark:ring-white/10',
         className,
       )}
       style={{
