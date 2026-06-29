@@ -57,10 +57,10 @@ function Chip({ active, onClick, children }: ChipProps): React.JSX.Element {
       aria-selected={active}
       onClick={onClick}
       className={cn(
-        'rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-150 ease-out',
+        'rounded-full px-3.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background',
         active
-          ? 'bg-accent text-accent-foreground'
-          : 'border border-border bg-surface text-muted-foreground hover:border-accent/40 hover:text-foreground',
+          ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/20'
+          : 'border border-border bg-surface text-muted-foreground hover:border-accent/40 hover:bg-surface-muted hover:text-foreground',
       )}
     >
       {children}

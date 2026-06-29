@@ -14,14 +14,21 @@ export function FeedSkeleton({ rows = 6 }: { rows?: number }): React.JSX.Element
             <Skeleton className="ml-auto h-3 w-8" />
           </div>
           <div className="relative flex shrink-0 justify-center">
-            <span className="absolute inset-y-0 w-px bg-border" />
-            <span className="mt-4 h-2 w-2 rounded-full bg-border" />
+            <span className="absolute inset-y-0 w-px bg-gradient-to-b from-border/40 via-border to-border/40" />
+            <span className="mt-[18px] h-2 w-2 rounded-full bg-border ring-4 ring-background" />
           </div>
-          <div className="min-w-0 flex-1 rounded-xl border border-border bg-surface p-4">
-            <Skeleton className="mb-2 h-4 w-40" />
+          <div className="surface-card min-w-0 flex-1 rounded-xl border border-border bg-surface p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Skeleton className="h-7 w-7 rounded-full" />
+              <Skeleton className="h-3 w-24" />
+            </div>
             <Skeleton className="mb-2 h-4 w-3/4" />
             <Skeleton className="h-3 w-full" />
-            <Skeleton className="mt-1 h-3 w-2/3" />
+            <Skeleton className="mt-1.5 h-3 w-2/3" />
+            <div className="mt-3 flex gap-1.5">
+              <Skeleton className="h-4 w-12 rounded-md" />
+              <Skeleton className="h-4 w-10 rounded-md" />
+            </div>
           </div>
         </div>
       ))}
@@ -50,12 +57,14 @@ export function FeedEmpty({
   const t = useT();
   return (
     <div
-      className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center"
+      className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center"
       data-testid={testId}
     >
-      <Icon className="h-8 w-8 text-muted-foreground/60" aria-hidden />
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-surface-muted ring-1 ring-inset ring-border">
+        <Icon className="h-5 w-5 text-muted-foreground" aria-hidden />
+      </span>
       <p className="text-sm font-medium text-foreground">{title ?? t('feed.emptyTitle')}</p>
-      <p className="max-w-xs text-xs text-muted-foreground">
+      <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
         {description ?? t('feed.emptyDescription')}
       </p>
       {action && <div className="mt-1">{action}</div>}
@@ -112,9 +121,11 @@ export function FeedError({ error, onRetry }: ErrorStateProps): React.JSX.Elemen
       className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center"
       data-testid="feed-error"
     >
-      <AlertTriangle className="h-8 w-8 text-destructive/70" aria-hidden />
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-destructive/10 ring-1 ring-inset ring-destructive/20">
+        <AlertTriangle className="h-5 w-5 text-destructive" aria-hidden />
+      </span>
       <p className="text-sm font-medium text-foreground">{t('feed.errorTitle')}</p>
-      <p className="max-w-xs text-xs text-muted-foreground">{message}</p>
+      <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
           <RefreshCw className="h-4 w-4" />

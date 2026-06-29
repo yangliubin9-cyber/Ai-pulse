@@ -95,7 +95,7 @@ export function AppShell(): React.JSX.Element {
 
       {/* Content column */}
       <div className="lg:pl-[15rem]">
-        <main className="mx-auto w-full max-w-[1000px] px-4 py-7 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1000px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
           <Outlet />
         </main>
       </div>
@@ -124,13 +124,13 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-50 flex w-[15rem] flex-col bg-sidebar text-sidebar-foreground transition-transform duration-200 ease-out',
+        'fixed inset-y-0 left-0 z-50 flex w-[15rem] flex-col border-r border-white/[0.06] bg-sidebar text-sidebar-foreground transition-transform duration-200 ease-out',
         'lg:translate-x-0',
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
       )}
       aria-label={t('nav.mainNav')}
     >
-      <div className="flex h-14 items-center justify-between px-4">
+      <div className="flex h-14 items-center justify-between border-b border-white/[0.06] px-4">
         <NavLink to="/" onClick={onClose} className="text-[15px] text-white">
           <Logo />
         </NavLink>
@@ -162,7 +162,7 @@ function Sidebar({
         </NavGroup>
       </nav>
 
-      <div className="border-t border-white/10 px-3 py-3">
+      <div className="border-t border-white/[0.08] px-3 py-3">
         <div className="mb-3 flex items-center justify-between">
           <span className="px-1 text-[11px] font-medium uppercase tracking-wide text-sidebar-foreground/70">
             {t('theme.label')}
@@ -176,8 +176,8 @@ function Sidebar({
           </span>
           <LangToggle />
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent/20 text-[11px] font-semibold text-accent">
+        <div className="flex items-center gap-2 rounded-lg bg-white/[0.04] px-2.5 py-2 ring-1 ring-inset ring-white/[0.06]">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent/20 text-[11px] font-semibold text-accent ring-1 ring-inset ring-accent/30">
             {(user?.email?.[0] ?? 'A').toUpperCase()}
           </span>
           <span className="min-w-0 flex-1 truncate text-xs text-sidebar-foreground/90">
@@ -265,9 +265,9 @@ const SidebarLink = memo(function SidebarLink({
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
-          'group relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors duration-150 ease-out',
+          'group relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium outline-none transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-accent/60',
           isActive
-            ? 'bg-white/10 text-white'
+            ? 'bg-accent/[0.12] text-white'
             : 'text-sidebar-foreground hover:bg-white/5 hover:text-white',
         )
       }
@@ -276,13 +276,16 @@ const SidebarLink = memo(function SidebarLink({
         <>
           <span
             className={cn(
-              'absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-opacity duration-150',
+              'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-accent transition-opacity duration-150',
               isActive ? 'opacity-100' : 'opacity-0',
             )}
             aria-hidden
           />
           <Icon
-            className={cn('h-4 w-4 shrink-0', isActive ? 'text-accent' : '')}
+            className={cn(
+              'h-4 w-4 shrink-0 transition-colors duration-150',
+              isActive ? 'text-accent' : 'text-current',
+            )}
             aria-hidden
           />
           <span className="truncate">{t(item.labelKey)}</span>

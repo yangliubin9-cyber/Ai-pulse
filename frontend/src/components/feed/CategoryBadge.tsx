@@ -18,13 +18,16 @@ export function CategoryBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-sm px-1.5 py-0.5 text-[11px] font-medium leading-none',
+        'inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium leading-none ring-1 ring-inset',
         className,
       )}
-      style={{
-        color: `hsl(var(--cat-${meta.colorVar}))`,
-        backgroundColor: `hsl(var(--cat-${meta.colorVar}) / 0.12)`,
-      }}
+      style={
+        {
+          color: `hsl(var(--cat-${meta.colorVar}))`,
+          backgroundColor: `hsl(var(--cat-${meta.colorVar}) / 0.12)`,
+          '--tw-ring-color': `hsl(var(--cat-${meta.colorVar}) / 0.22)`,
+        } as React.CSSProperties
+      }
     >
       {categoryLabel(category, t)}
     </span>
