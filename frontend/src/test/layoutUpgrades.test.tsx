@@ -75,6 +75,29 @@ describe('ItemCard recommendation strip', () => {
   });
 });
 
+describe('ItemCard content-first / link card', () => {
+  it('shows the summary as the card body when present', () => {
+    renderWithProviders(<ItemCard item={makeItem({ summary: '这是一段摘要内容。' })} />);
+    expect(screen.getByText('这是一段摘要内容。')).toBeInTheDocument();
+    // No link-only chip when there is real content.
+    expect(screen.queryByText(/链接 ·/)).not.toBeInTheDocument();
+  });
+
+  it('shows a "链接 · host" line for a link-only item (no summary)', () => {
+    renderWithProviders(
+      <ItemCard
+        item={makeItem({
+          summary: null,
+          summary_zh: null,
+          url: 'https://www.github.com/foo/bar',
+        })}
+      />,
+    );
+    // www. stripped; presented as an intentional link card rather than empty.
+    expect(screen.getByText(/链接 · github\.com/)).toBeInTheDocument();
+  });
+});
+
 describe('ItemDetailPage double-box layout', () => {
   it('renders the reason box (markdown bold) and the body box together', async () => {
     detail.mockResolvedValue(

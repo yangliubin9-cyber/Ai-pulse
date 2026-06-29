@@ -186,6 +186,7 @@ export const zh = {
     openExternal: '在新标签页打开',
     viewDetail: '查看详情',
     original: '原文',
+    link: '链接',
     reason: '推荐理由',
   },
 
