@@ -28,6 +28,11 @@ class FeedItem(Base):
     # no body (e.g. Hacker News). content_zh is its Chinese translation.
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Editorial "why this matters" blurb, split out of content_zh so the frontend
+    # can render a dedicated "精选理由" box separate from the summary box. NULL
+    # when no reason was written / split out yet (new items leave it empty until
+    # a future LLM step fills it).
+    reason_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
     author: Mapped[str | None] = mapped_column(String(256), nullable=True)
     category: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)

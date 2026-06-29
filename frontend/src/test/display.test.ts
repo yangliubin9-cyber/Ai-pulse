@@ -12,6 +12,7 @@ function makeItem(over: Partial<Item> = {}): Item {
     url: 'https://example.com/post',
     summary: 'English summary.',
     summary_zh: '中文摘要。',
+    reason_zh: null,
     author: null,
     category: 'model',
     tags: [],

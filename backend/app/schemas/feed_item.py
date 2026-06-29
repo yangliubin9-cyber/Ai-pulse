@@ -21,6 +21,9 @@ class FeedItemOut(ORMModel):
     url: str
     summary: str
     summary_zh: Optional[str] = None
+    # Editorial "why this matters" blurb, split out of the body so the frontend
+    # renders a dedicated 精选理由 box. Short, so it ships in the list too.
+    reason_zh: Optional[str] = None
     author: Optional[str] = None
     category: str
     tags: list[str]

@@ -14,6 +14,7 @@ function makeItem(over: Partial<Item> = {}): Item {
     url: 'https://example.com/post',
     summary: '这是一段摘要文本。',
     summary_zh: null,
+    reason_zh: null,
     author: null,
     category: 'model',
     tags: ['llm', 'release'],

@@ -101,6 +101,12 @@ class FeedItemRepository:
                 | FeedItem.summary.ilike(pattern, escape="\\")
                 | FeedItem.summary_zh.ilike(pattern, escape="\\")
             )
+        if featured:
+            # 精选只放"站内可读全文"的条目：来源自身提供了正文（content 非空）。
+            # 像 Hacker News 这类只给标题+外链、没有正文的条目不进精选（仍出现在
+            # 全部 AI 动态里），保证用户点开精选里的任何一篇都能在站内读中文正文。
+            filters.append(FeedItem.content.isnot(None))
+            filters.append(FeedItem.content != "")
 
         count_stmt = select(func.count()).select_from(FeedItem)
         if filters:

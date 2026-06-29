@@ -7,6 +7,16 @@ stages: [lint, test, contract, e2e, sast, deps_scan, secret_scan, build, image_s
 variables:
   IMAGE_BACKEND: "$REGISTRY_URL/ai-pulse-backend"
   IMAGE_FRONTEND: "$REGISTRY_URL/ai-pulse-frontend"
+  # LLM 内容增强（可选；默认关，字段名与 .env.example / helm values 一致）。
+  # LLM_API_KEY 为 SECRET：走 GitLab Masked Variable，禁止写进本文件。
+  LLM_ENABLED: "false"
+  LLM_PROVIDER: "openai-compatible"
+  LLM_BASE_URL: ""
+  LLM_MODEL: ""
+  LLM_TIMEOUT_SECONDS: "60"
+  LLM_MAX_TOKENS: "2048"
+  LLM_TEMPERATURE: "0.3"
+  LLM_CONCURRENCY: "2"
 
 # ── 依赖缓存（D2：按 lockfile 绑 key，避免每次冷装）──
 .backend_cache: &backend_cache

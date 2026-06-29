@@ -72,6 +72,11 @@ export const zh = {
       groupCount: '{count} 条',
       emptyTitle: '这一天没有日报',
       emptyDescription: '换一个日期，或回到精选查看最新内容。',
+      coverKicker: '每日精选 · AI 资讯周刊',
+      coverSubtitle: '把这一天的 AI 动态，收敛成一份可一口气读完的清单。',
+      volume: 'VOL.{vol}',
+      issueCount: '{count} 篇',
+      sectionCount: '{count} 篇',
     },
     sources: {
       title: '采集来源',
@@ -89,6 +94,7 @@ export const zh = {
       back: '返回',
       breadcrumbFeed: '资讯流',
       breadcrumbCurrent: '详情',
+      reasonTitle: '推荐理由',
       bodyTitle: '内容摘要',
       bodyTitleFull: '正文',
       bodySourceNote: '正文转录自原始来源，版权归原作者所有；如需完整体验请点「阅读原文」。',
@@ -180,6 +186,7 @@ export const zh = {
     openExternal: '在新标签页打开',
     viewDetail: '查看详情',
     original: '原文',
+    reason: '推荐理由',
   },
 
   search: {

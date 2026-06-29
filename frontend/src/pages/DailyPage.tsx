@@ -1,22 +1,22 @@
 import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { CategoryBadge } from '@/components/feed/CategoryBadge';
 import { ScoreBadge } from '@/components/feed/ScoreBadge';
 import { FeedStateGate } from '@/components/feed/FeedStates';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDaily } from '@/hooks/useCatalog';
-import { longDateLabel, shiftDateValue, timeOfDay, todayInputValue } from '@/lib/time';
+import { longDateLabel, shiftDateValue, todayInputValue } from '@/lib/time';
 import { CATEGORY_ORDER, categoryLabel } from '@/lib/constants';
 import { useI18n } from '@/i18n/I18nProvider';
 import { displayTitle } from '@/lib/display';
 import { itemPath } from '@/lib/itemPath';
+import type { TFn } from '@/i18n/I18nProvider';
 import type { Lang } from '@/i18n';
 import type { CategoryKey, Item } from '@/lib/types';
 
-/** AI Daily: featured items for a chosen day, grouped by category, with stats. */
+/** AI Daily: a magazine-style brief of a chosen day's featured items. */
 export function DailyPage(): React.JSX.Element {
   const { lang, t } = useI18n();
   const today = todayInputValue();
@@ -26,22 +26,50 @@ export function DailyPage(): React.JSX.Element {
   const items = data?.items;
 
   const groups = useMemo(() => groupByCategory(items ?? []), [items]);
-  const sourceCount = useMemo(
-    () => new Set((items ?? []).map((i) => i.source_name)).size,
-    [items],
-  );
-  const topCategory = groups[0];
 
   const atToday = date >= today;
   const hasItems = Boolean(items && items.length > 0);
+  // Issue number "VOL.YYYY.MM.DD" derived from the selected day.
+  const volume = date.replace(/-/g, '.');
 
   return (
     <div>
-      <PageHeader
-        title={t('pages.daily.title')}
-        description={longDateLabel(date, lang)}
-        actions={
-          <div className="flex items-center gap-1.5">
+      {/* Magazine cover — kicker, big masthead, issue meta, subtitle, and the
+          date picker. Deep-token surface, generous spacing, a heavy rule. */}
+      <header className="mb-8 border-b-2 border-border pb-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+              {t('pages.daily.coverKicker')}
+            </p>
+            <h1 className="mt-2 text-4xl font-bold leading-none tracking-tight text-foreground sm:text-5xl">
+              {t('pages.daily.title')}
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <span className="font-mono font-medium tracking-wide text-foreground/80">
+                {t('pages.daily.volume', { vol: volume })}
+              </span>
+              <span aria-hidden className="text-border">
+                /
+              </span>
+              <span>{longDateLabel(date, lang)}</span>
+              {hasItems && items && (
+                <>
+                  <span aria-hidden className="text-border">
+                    /
+                  </span>
+                  <span className="tabular-nums">
+                    {t('pages.daily.issueCount', { count: items.length })}
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
+              {t('pages.daily.coverSubtitle')}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
             <Button
               variant="outline"
               size="icon"
@@ -68,20 +96,8 @@ export function DailyPage(): React.JSX.Element {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        }
-      />
-
-      {/* Stats bar */}
-      {hasItems && items && (
-        <div className="mb-6 grid grid-cols-3 gap-3" data-testid="daily-stats">
-          <StatCard label={t('pages.daily.statEvents')} value={String(items.length)} />
-          <StatCard label={t('pages.daily.statSources')} value={String(sourceCount)} />
-          <StatCard
-            label={t('pages.daily.statTop')}
-            value={topCategory ? categoryLabel(topCategory.key, t) : '—'}
-          />
         </div>
-      )}
+      </header>
 
       <FeedStateGate
         isPending={isPending}
@@ -92,21 +108,9 @@ export function DailyPage(): React.JSX.Element {
         emptyTitle={t('pages.daily.emptyTitle')}
         emptyDescription={t('pages.daily.emptyDescription')}
       >
-        <div className="animate-fade-in space-y-7">
-          {groups.map((group) => (
-            <section key={group.key}>
-              <h2 className="mb-2 flex items-center gap-2">
-                <CategoryBadge category={group.key} />
-                <span className="text-xs text-muted-foreground">
-                  {t('pages.daily.groupCount', { count: group.items.length })}
-                </span>
-              </h2>
-              <ul className="divide-y divide-border border-y border-border">
-                {group.items.map((item) => (
-                  <CompactRow key={item.id} item={item} lang={lang} />
-                ))}
-              </ul>
-            </section>
+        <div className="animate-fade-in space-y-10">
+          {groups.map((group, i) => (
+            <DailySection key={group.key} group={group} ordinal={i + 1} lang={lang} t={t} />
           ))}
         </div>
       </FeedStateGate>
@@ -114,42 +118,88 @@ export function DailyPage(): React.JSX.Element {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }): React.JSX.Element {
+/** One numbered magazine section: big ordinal + category name + count, then rows. */
+function DailySection({
+  group,
+  ordinal,
+  lang,
+  t,
+}: {
+  group: CategoryGroup;
+  ordinal: number;
+  lang: Lang;
+  t: TFn;
+}): React.JSX.Element {
   return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-2.5">
-      <p className="truncate text-lg font-semibold tabular-nums text-foreground">{value}</p>
-      <p className="truncate text-xs text-muted-foreground">{label}</p>
-    </div>
+    <section data-testid="daily-section">
+      <div className="mb-3 flex items-baseline gap-3 border-b border-border pb-2">
+        {/* Big two-digit ordinal: 01, 02, 03… */}
+        <span
+          className="font-mono text-2xl font-bold leading-none tabular-nums text-accent/70"
+          aria-hidden
+        >
+          {String(ordinal).padStart(2, '0')}
+        </span>
+        <h2 className="flex flex-wrap items-baseline gap-2">
+          <span className="text-lg font-semibold tracking-tight text-foreground">
+            {categoryLabel(group.key, t)}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {t('pages.daily.sectionCount', { count: group.items.length })}
+          </span>
+        </h2>
+        <span className="ml-auto self-center">
+          <CategoryBadge category={group.key} />
+        </span>
+      </div>
+      <ul className="divide-y divide-border/70">
+        {group.items.map((item) => (
+          <CompactRow key={item.id} item={item} lang={lang} t={t} />
+        ))}
+      </ul>
+    </section>
   );
 }
 
-/** Compact one-line entry: time · title (→ detail) · heat. */
+/** Compact magazine entry: title (→ detail) · source · heat, optional reason line. */
 const CompactRow = memo(function CompactRow({
   item,
   lang,
+  t,
 }: {
   item: Item;
   lang: Lang;
+  t: TFn;
 }): React.JSX.Element {
+  // One-line editorial note (markdown bold stripped to plain text), if present.
+  const reason = item.reason_zh?.trim()
+    ? item.reason_zh.replace(/\*\*/g, '').trim()
+    : null;
+
   return (
-    <li className="flex items-center gap-3 py-2.5">
-      <time
-        className="w-10 shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground"
-        dateTime={item.published_at}
-      >
-        {timeOfDay(item.published_at)}
-      </time>
-      <Link
-        to={itemPath(item.id)}
-        className="min-w-0 flex-1 truncate text-sm text-foreground hover:text-accent hover:underline"
-      >
-        {displayTitle(item, lang)}
-      </Link>
-      <span className="shrink-0 truncate text-xs text-muted-foreground">{item.source_name}</span>
-      {item.score != null && (
-        <span className="shrink-0">
-          <ScoreBadge score={item.score} />
-        </span>
+    <li className="py-3">
+      <div className="flex items-center gap-3">
+        <Link
+          to={itemPath(item.id)}
+          className="min-w-0 flex-1 truncate text-sm font-medium text-foreground hover:text-accent hover:underline"
+        >
+          {displayTitle(item, lang)}
+        </Link>
+        <span className="shrink-0 truncate text-xs text-muted-foreground">{item.source_name}</span>
+        {item.score != null && (
+          <span className="shrink-0">
+            <ScoreBadge score={item.score} />
+          </span>
+        )}
+      </div>
+      {reason && (
+        <p
+          className="mt-1 truncate text-xs leading-relaxed text-muted-foreground"
+          data-testid="row-reason"
+        >
+          <span className="mr-1.5 font-medium text-accent/80">{t('card.reason')}</span>
+          {reason}
+        </p>
       )}
     </li>
   );

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REDACTED = "***"
@@ -70,6 +70,21 @@ class Settings(BaseSettings):
     TRANSLATION_PROVIDER: str = "local"
     TRANSLATION_TARGET_LANG: str = "zh"
 
+    # --- LLM content enhancement (optional; off by default) ---
+    # When effectively enabled (see ``llm_effective_enabled``) ingest enriches
+    # each item via an OpenAI-compatible chat endpoint: fluent zh title/summary/
+    # content + an AIHOT-style ``reason_zh``. When not enabled, ingest falls back
+    # entirely to the offline argostranslate path (behaviour unchanged).
+    LLM_ENABLED: bool = False
+    LLM_PROVIDER: str = "openai-compatible"
+    LLM_BASE_URL: str = ""
+    LLM_API_KEY: SecretStr = SecretStr("")  # SECRET
+    LLM_MODEL: str = ""
+    LLM_TIMEOUT_SECONDS: int = 60
+    LLM_MAX_TOKENS: int = 2048
+    LLM_TEMPERATURE: float = 0.3
+    LLM_CONCURRENCY: int = 2
+
     # --- observability / otel ---
     OTEL_TRACES_ENABLED: bool = False
     OTEL_EXPORTER_OTLP_METRICS_ENABLED: bool = False
@@ -79,6 +94,47 @@ class Settings(BaseSettings):
     @classmethod
     def _upper_log_level(cls, v: str) -> str:
         return v.upper()
+
+    @model_validator(mode="after")
+    def _validate_llm(self) -> "Settings":
+        """Fail fast (铁律七) when LLM is switched on but mis-configured.
+
+        Only enforced when ``LLM_ENABLED`` is True: in that case base_url / api_key
+        / model must all be non-empty, otherwise startup crashes with a clear list
+        of the missing fields. When ``LLM_ENABLED`` is False the LLM fields are
+        ignored entirely (the offline argostranslate path is used).
+        """
+        if not self.LLM_ENABLED:
+            return self
+        missing: list[str] = []
+        if not self.LLM_BASE_URL.strip():
+            missing.append("LLM_BASE_URL")
+        if not self.LLM_API_KEY.get_secret_value().strip():
+            missing.append("LLM_API_KEY")
+        if not self.LLM_MODEL.strip():
+            missing.append("LLM_MODEL")
+        if missing:
+            raise ValueError(
+                "LLM_ENABLED=True but required LLM settings are empty: "
+                f"{', '.join(missing)}. Fill them in .env or set LLM_ENABLED=False."
+            )
+        return self
+
+    @property
+    def llm_effective_enabled(self) -> bool:
+        """True only when LLM is on AND base_url / api_key / model are all set.
+
+        This is the single switch business code checks: when False, ingest runs the
+        offline argostranslate path exactly as before. With the startup validator
+        above this is equivalent to ``LLM_ENABLED`` once the app has booted, but it
+        is also safe to call in tests that build Settings directly.
+        """
+        return bool(
+            self.LLM_ENABLED
+            and self.LLM_BASE_URL.strip()
+            and self.LLM_API_KEY.get_secret_value().strip()
+            and self.LLM_MODEL.strip()
+        )
 
     @property
     def cors_origins_list(self) -> list[str]:
@@ -96,7 +152,8 @@ class Settings(BaseSettings):
                 out[name] = value
         # model_dump already converts SecretStr to "**********"; normalise to _REDACTED
         for name in ("DB_PASSWORD", "CACHE_PASSWORD", "APP_SECRET_KEY",
-                     "OBJECT_STORAGE_ACCESS_KEY", "OBJECT_STORAGE_SECRET_KEY"):
+                     "OBJECT_STORAGE_ACCESS_KEY", "OBJECT_STORAGE_SECRET_KEY",
+                     "LLM_API_KEY"):
             out[name] = _REDACTED
         return out
 

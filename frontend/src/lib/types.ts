@@ -32,6 +32,13 @@ export interface Item {
    * endpoint; null when unavailable. Optional because list endpoints omit it.
    */
   content_zh?: string | null;
+  /**
+   * Editorial "why this matters" note in Chinese, returned by both the list and
+   * detail endpoints. May contain inline markdown bold (`**...**`); null when the
+   * item has no note yet (e.g. freshly ingested items). `content_zh` is now the
+   * plain body with this recommendation note already split out.
+   */
+  reason_zh: string | null;
   author: string | null;
   category: CategoryKey;
   tags: string[];

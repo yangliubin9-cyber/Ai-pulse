@@ -73,6 +73,11 @@ export const en: Zh = {
       groupCount: '{count} items',
       emptyTitle: 'No daily for this day',
       emptyDescription: 'Try another date, or return to Featured for the latest.',
+      coverKicker: 'Daily Picks · AI News Weekly',
+      coverSubtitle: "The day's AI moves, distilled into a list you can read in one sitting.",
+      volume: 'VOL.{vol}',
+      issueCount: '{count} stories',
+      sectionCount: '{count} stories',
     },
     sources: {
       title: 'Sources',
@@ -90,6 +95,7 @@ export const en: Zh = {
       back: 'Back',
       breadcrumbFeed: 'Feed',
       breadcrumbCurrent: 'Detail',
+      reasonTitle: 'Why this matters',
       bodyTitle: 'Summary',
       bodyTitleFull: 'Article',
       bodySourceNote:
@@ -185,6 +191,7 @@ export const en: Zh = {
     openExternal: 'Open in a new tab',
     viewDetail: 'View detail',
     original: 'Original',
+    reason: 'Why this matters',
   },
 
   search: {

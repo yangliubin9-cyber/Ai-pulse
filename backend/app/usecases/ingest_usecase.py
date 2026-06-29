@@ -26,8 +26,11 @@ from app.db import get_sessionmaker
 from app.models.base import utcnow
 from app.models.feed_item import FeedItem
 from app.repositories.feed_item_repo import FeedItemRepository
+from app.services.llm.base import LLMClient, LLMError
+from app.services.llm.factory import build_llm_client
 from app.services.translation.base import get_translator, is_probably_chinese
 from app.usecases import categorize as cat
+from app.usecases.enrich_usecase import enrich_item
 
 logger = structlog.get_logger(__name__)
 
@@ -63,6 +66,58 @@ class IngestUsecase:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._repo = FeedItemRepository(session)
+
+    # --- LLM enrichment (optional path) -------------------------------------
+
+    async def _enrich_item_llm(
+        self, client: LLMClient, item: FeedItem, force: bool
+    ) -> dict[str, int]:
+        """Enrich one item via the LLM and persist zh fields + reason_zh.
+
+        On any LLM failure (network, bad JSON, ...) this raises; the caller catches
+        it and falls back to the offline argostranslate path for this single item,
+        so a flaky endpoint never aborts the batch.
+
+        Mirrors the argostranslate per-field policy so behaviour stays predictable:
+        already-Chinese source fields are stored verbatim and rows that already have
+        a zh value are skipped unless ``force``. ``reason_zh`` is only written on the
+        LLM path (the argostranslate path leaves it NULL).
+        """
+        settings = get_settings()
+        result = await enrich_item(
+            client,
+            title=item.title,
+            summary=item.summary or "",
+            content=item.content,
+            max_tokens=settings.LLM_MAX_TOKENS,
+            temperature=settings.LLM_TEMPERATURE,
+        )
+
+        filled = {"title": 0, "summary": 0, "content": 0}
+        # (source attr, zh attr, llm value) — reuse the same per-field rules as the
+        # offline path so the two routes leave the DB in comparable shape.
+        plan = (
+            ("title", "title_zh", result.title_zh),
+            ("summary", "summary_zh", result.summary_zh),
+            ("content", "content_zh", result.content_zh),
+        )
+        for src_attr, zh_attr, zh_value in plan:
+            src = getattr(item, src_attr)
+            if not src or not src.strip():
+                if getattr(item, zh_attr) is None:
+                    setattr(item, zh_attr, "")
+                continue
+            if not force and getattr(item, zh_attr) is not None:
+                continue
+            if is_probably_chinese(src):
+                setattr(item, zh_attr, src)
+                continue
+            setattr(item, zh_attr, zh_value or "")
+            filled[src_attr] = int(bool(zh_value))
+        # reason_zh: written by the LLM path only (force overwrites an existing one).
+        if result.reason_zh and (force or item.reason_zh is None):
+            item.reason_zh = result.reason_zh
+        return filled
 
     # --- translation primitives ---------------------------------------------
 
@@ -248,14 +303,35 @@ class IngestUsecase:
 
         Within a batch, items are translated concurrently (bounded by a semaphore)
         and identical source texts are translated only once via a shared cache.
+
+        When the LLM is *effectively enabled* (config: LLM_ENABLED + base_url + key
+        + model all set), each item is enriched via one LLM call (fluent zh +
+        reason_zh) instead; a single item's LLM failure falls back to the offline
+        argostranslate path for that item only (logged, batch continues). When the
+        LLM is not enabled, this is exactly the previous argostranslate-only flow.
         """
+        settings = get_settings()
+        llm_client: LLMClient | None = build_llm_client(settings)
         processed = 0
         filled = {"title": 0, "summary": 0, "content": 0}
         offset = 0
-        sem = asyncio.Semaphore(_translate_concurrency())
+        # LLM calls are network-bound: bound their concurrency by LLM_CONCURRENCY.
+        # The offline path keeps its CPU-bound concurrency as before.
+        concurrency = settings.LLM_CONCURRENCY if llm_client is not None else _translate_concurrency()
+        sem = asyncio.Semaphore(max(1, concurrency))
 
         async def _guarded(item: FeedItem, cache: dict[str, str]) -> dict[str, int]:
             async with sem:
+                if llm_client is not None:
+                    try:
+                        return await self._enrich_item_llm(llm_client, item, force=force)
+                    except LLMError as exc:
+                        logger.warning(
+                            "llm_enrich_failed_fallback_argos",
+                            error=str(exc),
+                            title_preview=(item.title or "")[:80],
+                        )
+                        # Fall through to the offline translation for this item.
                 return await self._translate_item(item, force=force, cache=cache)
 
         while True:
