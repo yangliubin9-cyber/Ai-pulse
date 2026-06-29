@@ -1,11 +1,12 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Link2 } from 'lucide-react';
 import { SourceAvatar } from './SourceAvatar';
 import { CategoryBadge } from './CategoryBadge';
 import { ScoreBadge } from './ScoreBadge';
 import { useI18n } from '@/i18n/I18nProvider';
 import { displayTitle, displaySummary } from '@/lib/display';
+import { domainFromUrl } from '@/lib/domain';
 import { itemPath } from '@/lib/itemPath';
 import type { Item } from '@/lib/types';
 
@@ -31,6 +32,10 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
   const detailPath = itemPath(item.id);
   const title = displayTitle(item, lang);
   const summary = displaySummary(item, lang);
+  // Link-only items (e.g. a Hacker News submission with no summary) show the
+  // destination host as an intentional "链接 · github.com" line, so the card reads
+  // as a deliberate pointer rather than an empty title with a stray 原文 link.
+  const domain = summary ? null : domainFromUrl(item.url);
   // Editorial note shown as a low-key strip. Markdown bold markers are stripped
   // to plain text here (the card is a compact, clamped preview); the full,
   // emphasized rendering lives on the detail page.
@@ -69,14 +74,21 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
             </Link>
           </h3>
 
-          {summary && (
+          {summary ? (
             <Link
               to={detailPath}
-              className="mt-1.5 block line-clamp-2 text-[13px] leading-relaxed text-muted-foreground transition-colors duration-150 hover:text-foreground"
+              className="mt-1.5 block line-clamp-3 text-[13px] leading-relaxed text-muted-foreground transition-colors duration-150 hover:text-foreground"
             >
               {summary}
             </Link>
-          )}
+          ) : domain ? (
+            <p className="mt-1.5 flex items-center gap-1 text-[12px] text-muted-foreground/80">
+              <Link2 className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="truncate">
+                {t('card.link')} · {domain}
+              </span>
+            </p>
+          ) : null}
 
           {/* Recommendation strip — a low-key editorial note with a left accent
               bar and a small label, shown only when reason_zh is present. */}
@@ -118,16 +130,19 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
             {tag}
           </span>
         ))}
+        {/* Original-source jump, demoted to an icon-only button so the feed no
+            longer reads as a wall of "原文" links. The accessible name is kept as
+            原文 (aria-label) for screen readers. */}
         <a
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
           onClick={stopPropagation}
-          className="ml-auto inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-accent"
+          aria-label={t('card.original')}
+          className="ml-auto inline-flex shrink-0 items-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-accent"
           title={t('card.openExternal')}
         >
-          {t('card.original')}
-          <ExternalLink className="h-3 w-3" aria-hidden />
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
         </a>
       </div>
     </article>

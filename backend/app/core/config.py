@@ -70,6 +70,18 @@ class Settings(BaseSettings):
     TRANSLATION_PROVIDER: str = "local"
     TRANSLATION_TARGET_LANG: str = "zh"
 
+    # --- link enrichment (og:description for link-only items) ---
+    # Hacker News / bare-link items carry no summary. When enabled, ingest fetches
+    # the linked page's OWN <head> metadata (og:description / og:image) to give the
+    # item a one-line preview, so the feed reads as content instead of a wall of
+    # "原文" links. Reads only the page's self-declared meta, never body text;
+    # polite (declared UA, short timeout, capped read size, HTML-only).
+    ENRICH_OG_ENABLED: bool = True
+    ENRICH_OG_TIMEOUT_SECONDS: float = 10.0
+    ENRICH_OG_MAX_BYTES: int = 1_000_000
+    ENRICH_OG_MAX_SUMMARY_CHARS: int = 480
+    ENRICH_OG_CONCURRENCY: int = 4
+
     # --- LLM content enhancement (optional; off by default) ---
     # When effectively enabled (see ``llm_effective_enabled``) ingest enriches
     # each item via an OpenAI-compatible chat endpoint: fluent zh title/summary/

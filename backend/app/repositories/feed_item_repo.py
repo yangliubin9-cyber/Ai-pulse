@@ -52,6 +52,39 @@ class FeedItemRepository:
         )
         return list(result.scalars().all())
 
+    async def list_link_only_ids_for_enrichment(self, limit: int | None = None) -> list[str]:
+        """IDs of link-only items needing an og:description: empty ``summary`` AND
+        NULL ``content`` (e.g. Hacker News submissions). Newest first.
+
+        Returns a stable id snapshot so the enrichment backfill can page by id and
+        always terminate, even when a fetch yields no metadata and the row stays
+        a candidate.
+        """
+        stmt = (
+            select(FeedItem.id)
+            .where(FeedItem.summary == "", FeedItem.content.is_(None))
+            .order_by(FeedItem.published_at.desc())
+        )
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_link_only_by_ids(self, ids: list[str]) -> list[FeedItem]:
+        """Among ``ids``, the rows that are still link-only (empty ``summary`` AND
+        NULL ``content``). Re-applies the filter so an item another path already
+        filled is skipped."""
+        if not ids:
+            return []
+        result = await self._session.execute(
+            select(FeedItem).where(
+                FeedItem.id.in_(ids),
+                FeedItem.summary == "",
+                FeedItem.content.is_(None),
+            )
+        )
+        return list(result.scalars().all())
+
     async def list_all_for_retranslation(self, limit: int, offset: int) -> list[FeedItem]:
         """Page over *all* rows (stable id order) for a forced re-translation.
 

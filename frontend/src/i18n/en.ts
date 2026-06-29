@@ -191,6 +191,7 @@ export const en: Zh = {
     openExternal: 'Open in a new tab',
     viewDetail: 'View detail',
     original: 'Original',
+    link: 'Link',
     reason: 'Why this matters',
   },
 

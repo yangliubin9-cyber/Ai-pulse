@@ -38,6 +38,11 @@ INGEST_ITEMS = Counter(
     "Total items ingested",
     ["result"],  # fetched | new
 )
+ENRICH_OG = Counter(
+    "aipulse_enrich_og_total",
+    "og:description enrichment attempts for link-only items",
+    ["result"],  # fetched (got a description) | empty (no usable meta / fetch failed)
+)
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):

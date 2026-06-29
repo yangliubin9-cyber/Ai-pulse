@@ -13,15 +13,17 @@ import asyncio
 import os
 from datetime import timedelta
 
+import httpx
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.collectors.arxiv import collect_arxiv
-from app.collectors.base import CollectedItem
+from app.collectors.base import HEADERS, CollectedItem
 from app.collectors.hackernews import collect_hackernews
+from app.collectors.og_meta import fetch_og_meta
 from app.collectors.rss import collect_rss
 from app.core.config import get_settings
-from app.core.observability import INGEST_ITEMS, INGEST_RUNS
+from app.core.observability import ENRICH_OG, INGEST_ITEMS, INGEST_RUNS
 from app.db import get_sessionmaker
 from app.models.base import utcnow
 from app.models.feed_item import FeedItem
@@ -191,6 +193,78 @@ class IngestUsecase:
         )
         return {src: int(filled) for (src, _zh), filled in zip(FIELDS, results)}
 
+    # --- link enrichment (og:description) -----------------------------------
+
+    async def enrich_link_summaries(
+        self,
+        ids: list[str] | None = None,
+        batch_size: int = 40,
+        limit: int | None = None,
+    ) -> dict:
+        """Give link-only items a one-line summary from the linked page's og meta.
+
+        Targets rows that are bare links — empty ``summary`` AND NULL ``content``
+        (e.g. Hacker News submissions) — fetches the page's ``og:description`` (and
+        ``og:image`` when the item has no thumbnail), writes it to ``summary`` and
+        resets ``summary_zh`` to NULL so the translation backfill re-picks it up.
+        Never sets ``content`` (so 精选 stays "in-site readable body only").
+
+        Pages by a fixed id snapshot so the loop terminates even when a fetch
+        yields no metadata (the row stays a candidate for a future run, but is not
+        re-fetched within this one). Each fetch is guarded; one bad page never
+        aborts the batch. Idempotent and batched. ``ids`` restricts to specific
+        rows (the post-ingest path); otherwise all candidates are processed.
+        """
+        settings = get_settings()
+        if not settings.ENRICH_OG_ENABLED:
+            return {"processed": 0, "enriched": 0}
+
+        if ids is None:
+            ids = await self._repo.list_link_only_ids_for_enrichment(limit)
+        if not ids:
+            return {"processed": 0, "enriched": 0}
+
+        processed = 0
+        enriched = 0
+        sem = asyncio.Semaphore(max(1, settings.ENRICH_OG_CONCURRENCY))
+        timeout = httpx.Timeout(settings.ENRICH_OG_TIMEOUT_SECONDS)
+
+        async def _one(client: httpx.AsyncClient, item: FeedItem) -> None:
+            nonlocal enriched
+            async with sem:
+                meta = await fetch_og_meta(
+                    item.url,
+                    client=client,
+                    max_bytes=settings.ENRICH_OG_MAX_BYTES,
+                    max_chars=settings.ENRICH_OG_MAX_SUMMARY_CHARS,
+                )
+            if meta.description:
+                item.summary = meta.description
+                item.summary_zh = None  # let the translation backfill re-pick it up
+                if not item.image_url and meta.image_url:
+                    item.image_url = meta.image_url
+                enriched += 1
+                ENRICH_OG.labels("fetched").inc()
+            else:
+                ENRICH_OG.labels("empty").inc()
+
+        async with httpx.AsyncClient(
+            timeout=timeout, headers=HEADERS, follow_redirects=True
+        ) as client:
+            for offset in range(0, len(ids), batch_size):
+                if limit is not None and processed >= limit:
+                    break
+                batch_ids = ids[offset : offset + batch_size]
+                rows = await self._repo.list_link_only_by_ids(batch_ids)
+                if not rows:
+                    continue
+                await asyncio.gather(*(_one(client, item) for item in rows))
+                processed += len(rows)
+                await self._session.commit()
+                logger.info("enrich_og_batch", processed=processed, enriched=enriched)
+
+        return {"processed": processed, "enriched": enriched}
+
     # --- ingest --------------------------------------------------------------
 
     async def run(self, trigger: str = "manual", window_days: int | None = None) -> dict:
@@ -279,7 +353,16 @@ class IngestUsecase:
         try:
             sessionmaker = get_sessionmaker()
             async with sessionmaker() as session:
-                await IngestUsecase(session).backfill_translations(ids=ids)
+                usecase = IngestUsecase(session)
+                # Enrich link-only items first (fills summary from og:description and
+                # resets summary_zh=None) so the translation pass below picks the new
+                # text up. A fetch failure here never blocks translation.
+                if get_settings().ENRICH_OG_ENABLED:
+                    try:
+                        await usecase.enrich_link_summaries(ids=ids)
+                    except Exception as exc:  # noqa: BLE001 - enrichment is best-effort
+                        logger.warning("post_ingest_enrich_failed", error=str(exc), count=len(ids))
+                await usecase.backfill_translations(ids=ids)
         except Exception as exc:  # noqa: BLE001 - background task must not crash the loop
             logger.error("post_ingest_translation_failed", error=str(exc), count=len(ids))
 
