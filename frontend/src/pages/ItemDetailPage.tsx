@@ -45,7 +45,7 @@ export function ItemDetailPage(): React.JSX.Element {
   const reason = item?.reason_zh?.trim() ? item.reason_zh : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-24 sm:px-0">
+    <div className="mx-auto max-w-2xl pb-24">
       {/* Back + breadcrumb */}
       <div className="mb-5 flex items-center gap-2 text-sm text-muted-foreground">
         <button
@@ -90,41 +90,54 @@ export function ItemDetailPage(): React.JSX.Element {
 
       {!isPending && item && (
         <article data-testid="item-detail">
-          {/* Title */}
-          <h1 className="text-2xl font-semibold leading-snug tracking-tight sm:text-[30px]">
-            {title}
-          </h1>
+          {/* Header block — title, byline and taxonomy grouped together and set
+              off from the body by a bottom divider, giving the page a clear
+              "masthead → content" rhythm instead of a stack of loose rows. */}
+          <header className="border-b border-border pb-6">
+            {/* Title */}
+            <h1 className="text-balance text-[26px] font-semibold leading-tight tracking-tight sm:text-[32px]">
+              {title}
+            </h1>
 
-          {/* Byline: avatar · source · @handle · time · heat */}
-          <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
-            <SourceAvatar name={item.source_name} />
-            <span className="font-medium text-foreground">{item.source_name}</span>
-            {item.author && <span>@{item.author}</span>}
-            <span aria-hidden className="text-border">
-              ·
-            </span>
-            <time dateTime={item.published_at}>
-              {relativeTime(item.published_at, lang)}
-            </time>
-            {item.score != null && (
-              <span className="ml-1">
-                <ScoreBadge score={item.score} />
-              </span>
-            )}
-          </div>
+            {/* Byline — two tiers. Identity (avatar · source), time and heat sit
+                on the primary row; the often-long author credit drops to a quieter
+                line below so it can't shove the time/heat onto a ragged extra row. */}
+            <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                <SourceAvatar name={item.source_name} />
+                <span className="font-medium text-foreground">{item.source_name}</span>
+                <span aria-hidden className="text-border">
+                  ·
+                </span>
+                <time dateTime={item.published_at}>
+                  {relativeTime(item.published_at, lang)}
+                </time>
+                {item.score != null && (
+                  <span className="ml-0.5">
+                    <ScoreBadge score={item.score} />
+                  </span>
+                )}
+              </div>
+              {item.author && (
+                <p className="text-[13px] leading-relaxed text-muted-foreground/80">
+                  @{item.author}
+                </p>
+              )}
+            </div>
 
-          {/* Category + tags */}
-          <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            <CategoryBadge category={item.category} />
-            {item.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] leading-none text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+            {/* Category + tags — outlined pills, matching the feed card style. */}
+            <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
+              <CategoryBadge category={item.category} />
+              {item.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-md border border-border/70 px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </header>
 
           {/* Recommendation note — an emphasized editorial callout box, shown
               only when reason_zh is present. Accent-tinted, rounded, labelled.
@@ -150,32 +163,27 @@ export function ItemDetailPage(): React.JSX.Element {
           {/* Body box — AI summary / article. Skipped entirely when the source
               carries no body (HN link-only), in which case a hint is shown. */}
           <section className="mt-8">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            {/* Body header: section label on the left, translation toggle on the
+                right. The "read original" CTA lives once, as the primary accent
+                button below the body — keeping this row uncluttered so it never
+                wraps awkwardly on narrow screens. */}
+            <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {itemHasBody ? t('pages.detail.bodyTitleFull') : t('pages.detail.bodyTitle')}
               </h2>
-              <div className="flex items-center gap-1">
-                {canToggle && (
-                  <button
-                    type="button"
-                    onClick={() => setShowOriginal((v) => !v)}
-                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground hover:bg-surface-muted hover:text-foreground"
-                    data-testid="translation-toggle"
-                  >
-                    <Languages className="h-3.5 w-3.5" aria-hidden />
-                    {showOriginal
-                      ? t('pages.detail.showTranslation')
-                      : t('pages.detail.showOriginal')}
-                  </button>
-                )}
-                {/* Read original is always reachable from the top of the body. */}
-                <Button asChild variant="ghost" size="sm">
-                  <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    {t('pages.detail.readOriginal')}
-                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                  </a>
-                </Button>
-              </div>
+              {canToggle && (
+                <button
+                  type="button"
+                  onClick={() => setShowOriginal((v) => !v)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+                  data-testid="translation-toggle"
+                >
+                  <Languages className="h-3.5 w-3.5" aria-hidden />
+                  {showOriginal
+                    ? t('pages.detail.showTranslation')
+                    : t('pages.detail.showOriginal')}
+                </button>
+              )}
             </div>
             {body ? (
               <div data-testid="body-box">
@@ -234,10 +242,11 @@ export function ItemDetailPage(): React.JSX.Element {
  * only. Single newlines inside a paragraph are preserved via
  * `whitespace-pre-wrap`.
  *
- * Reading layout: ~42em column (`max-w-[42em]`) for a comfortable Chinese line
- * length, 16px body text at a relaxed 1.8 line-height, full foreground colour
- * (not muted) so long reads don't strain the eyes, and ~1em paragraph spacing
- * to separate paragraphs without first-line indentation.
+ * Reading layout: the body inherits the page's centred ~42em column
+ * (`max-w-2xl`), so its line length matches the title, divider and footer for a
+ * single clean reading edge. 17px body text at a relaxed 1.9 line-height, a hair
+ * of letter-spacing, near-full foreground colour (not muted) so long reads don't
+ * strain the eyes, and generous paragraph spacing without first-line indentation.
  */
 function ArticleBody({ text }: { text: string }): React.JSX.Element {
   const paragraphs = splitParagraphs(text);
@@ -247,11 +256,11 @@ function ArticleBody({ text }: { text: string }): React.JSX.Element {
 
   return (
     <div
-      className="space-y-5 text-[17px] leading-[1.9] tracking-[0.01em] text-foreground/95"
+      className="space-y-7 text-[17px] leading-[1.9] tracking-[0.01em] text-foreground/95"
       data-testid="article-body"
     >
       {blocks.map((block, i) => (
-        <p key={i} className="whitespace-pre-wrap break-words">
+        <p key={i} className="whitespace-pre-wrap break-words text-pretty">
           {block}
         </p>
       ))}
