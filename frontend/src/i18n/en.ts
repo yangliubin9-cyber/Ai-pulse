@@ -123,17 +123,20 @@ export const en: Zh = {
     about: {
       title: 'About AI Pulse',
       description: 'An AI news aggregator I built for myself.',
-      introTitle: 'Hi there',
-      intro:
-        "I'm the AI Pulse maintainer. This is a little site I put together for myself — it pulls the day's AI news into one place so I don't have to hop between feeds.",
-      bullet1:
-        'Aggregates AI news daily — models, products, industry, papers and techniques, all in one view.',
-      bullet2:
-        'Uses rules (and, in time, AI) to filter out the noise and keep only the few worth reading.',
-      bullet3: 'Completely free, mostly for my own use, no ads and no data selling.',
-      sourcesTitle: 'Data sources',
-      sources:
-        'Content is aggregated from public sources like official RSS blogs, Hacker News and arXiv, keeping the original attribution and links — just hit "Read original" to jump there. We only organize titles and summaries and never republish third-party editorial picks.',
+      eyebrow: 'ABOUT',
+      greeting: "Hi, I'm",
+      tagline: 'I built this site, and it’s free for everyone.',
+      line1: 'Catch what’s new in AI every day.',
+      line2: 'Let rules filter out the noise (AI in time).',
+      line3: 'Keep only the few worth reading.',
+      attribution1:
+        'AI Pulse is an aggregated digest and reading index; copyright stays with each source — it keeps only titles and summaries with attribution and links, and never reposts third-party editorial picks.',
+      attribution2:
+        'If you’re a source and want a correction, removal or display change, reach me via the feedback page.',
+      joinTitle: 'Found it useful? Add me',
+      wechatLabel: 'WeChat',
+      wechatCaption: 'Scan to add me — let’s talk AI',
+      footer: 'A small project made with care · since 2026',
     },
     agent: {
       title: 'Agent API',

@@ -120,15 +120,19 @@ export const zh = {
     about: {
       title: '关于 AI Pulse',
       description: '一个为自己做的 AI 资讯聚合站。',
-      introTitle: '你好',
-      intro:
-        '我是 AI Pulse 站长。这是我给自己搭的一个小站，每天把 AI 圈的动态聚到一处，省得我到处刷。',
-      bullet1: '每天聚合 AI 圈动态，模型、产品、行业、论文、技巧一处看全。',
-      bullet2: '用规则（未来接入 AI）帮你筛掉噪声，只留下值得看的几条。',
-      bullet3: '完全免费，自用为主，没有广告，也不卖数据。',
-      sourcesTitle: '数据来源',
-      sources:
-        '内容聚合自 RSS 官方博客、Hacker News、arXiv 等公开来源，保留原文出处与链接，点「阅读原文」即可跳转。我们只整理标题与摘要，不转载第三方编辑的精选内容。',
+      eyebrow: '关于这个站',
+      greeting: '嗨，我是',
+      tagline: '这个站是我做的，免费给大家用。',
+      line1: '每天抓 AI 圈的新动静。',
+      line2: '用规则帮我筛掉噪声（以后接 AI）。',
+      line3: '把真正值得看的几条留下来。',
+      attribution1:
+        'AI Pulse 是聚合摘要和阅读索引，原文版权归各来源所有：只整理标题与摘要、保留出处与链接，不转载第三方编辑的精选内容。',
+      attribution2: '如果你是来源方，想更正、下架或调整展示方式，可以通过反馈页联系我。',
+      joinTitle: '如果觉得有点用，欢迎加我',
+      wechatLabel: '微信',
+      wechatCaption: '扫码加我，一起聊 AI',
+      footer: '用心做的小项目 · since 2026',
     },
     agent: {
       title: 'Agent 接入',
