@@ -56,8 +56,10 @@ const LANG_OPTIONS: Array<{ value: Lang; labelKey: TKey }> = [
 
 /**
  * Application shell: fixed dark navy sidebar (brand + grouped vertical nav +
- * theme/account footer) with a centered, max-width content column. On narrow
- * screens the sidebar collapses behind a slide-over toggle.
+ * theme/account footer) with a full-width content area — list/feed pages fill the
+ * available width, while reading pages (detail, about, settings) constrain their
+ * own column internally. On narrow screens the sidebar collapses behind a
+ * slide-over toggle.
  */
 export function AppShell(): React.JSX.Element {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -95,7 +97,7 @@ export function AppShell(): React.JSX.Element {
 
       {/* Content column */}
       <div className="lg:pl-[15rem]">
-        <main className="mx-auto w-full max-w-[1000px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
+        <main className="w-full px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
           <Outlet />
         </main>
       </div>
