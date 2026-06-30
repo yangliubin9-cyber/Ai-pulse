@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
   Layers,
+  Bookmark,
   CalendarDays,
   Radio,
   Bot,
@@ -35,6 +36,7 @@ interface NavEntry {
 const CONTENT_NAV: NavEntry[] = [
   { to: '/', labelKey: 'nav.featured', icon: Sparkles, end: true },
   { to: '/all', labelKey: 'nav.all', icon: Layers },
+  { to: '/saved', labelKey: 'nav.saved', icon: Bookmark },
   { to: '/daily', labelKey: 'nav.daily', icon: CalendarDays },
   { to: '/sources', labelKey: 'nav.sources', icon: Radio },
 ];

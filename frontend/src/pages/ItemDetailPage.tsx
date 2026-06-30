@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, ChevronRight, Languages, FileQuestion, Sparkles } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ChevronRight, Languages, FileQuestion, Sparkles, Bookmark } from 'lucide-react';
 import { SourceAvatar } from '@/components/feed/SourceAvatar';
 import { CategoryBadge } from '@/components/feed/CategoryBadge';
 import { ScoreBadge } from '@/components/feed/ScoreBadge';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeedError, FeedEmpty } from '@/components/feed/FeedStates';
 import { useItem } from '@/hooks/useItems';
+import { useMarkRead, useToggleSaved } from '@/hooks/useItemState';
+import { cn } from '@/lib/cn';
 import { ApiError } from '@/api/client';
 import { relativeTime } from '@/lib/time';
 import { sourceTypeLabel } from '@/lib/constants';
@@ -43,6 +45,21 @@ export function ItemDetailPage(): React.JSX.Element {
   // Editorial recommendation note (Chinese only). Shown in its own emphasized
   // box whenever present, regardless of the original/translation toggle.
   const reason = item?.reason_zh?.trim() ? item.reason_zh : null;
+  // Rough reading-time estimate, shown only for items with a full body. ~350
+  // CJK chars per minute; clamped to a 1-minute floor.
+  const readingMin = itemHasBody && body ? Math.max(1, Math.round(body.length / 350)) : null;
+
+  // Mark the item read once it has loaded (fires once per id even though the
+  // mutation invalidates the detail query and re-runs this effect).
+  const markRead = useMarkRead();
+  const toggleSaved = useToggleSaved();
+  const markedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (item && id && markedRef.current !== id && !item.read) {
+      markedRef.current = id;
+      markRead.mutate(id);
+    }
+  }, [item, id, markRead]);
 
   return (
     <div className="mx-auto max-w-2xl pb-24">
@@ -112,11 +129,34 @@ export function ItemDetailPage(): React.JSX.Element {
                 <time dateTime={item.published_at}>
                   {relativeTime(item.published_at, lang)}
                 </time>
+                {readingMin != null && (
+                  <>
+                    <span aria-hidden className="text-border">
+                      ·
+                    </span>
+                    <span>{t('pages.detail.readingTime', { min: readingMin })}</span>
+                  </>
+                )}
                 {item.score != null && (
                   <span className="ml-0.5">
                     <ScoreBadge score={item.score} />
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => toggleSaved.mutate({ id: item.id, saved: !item.saved })}
+                  aria-label={item.saved ? t('card.unsave') : t('card.save')}
+                  aria-pressed={Boolean(item.saved)}
+                  className={cn(
+                    'ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                    item.saved
+                      ? 'border-accent/50 bg-accent/10 text-accent'
+                      : 'border-border text-muted-foreground hover:bg-surface-muted hover:text-accent',
+                  )}
+                >
+                  <Bookmark className={cn('h-3.5 w-3.5', item.saved && 'fill-current')} aria-hidden />
+                  {item.saved ? t('card.unsave') : t('card.save')}
+                </button>
               </div>
               {item.author && (
                 <p className="text-[13px] leading-relaxed text-muted-foreground/80">

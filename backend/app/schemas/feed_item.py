@@ -31,6 +31,10 @@ class FeedItemOut(ORMModel):
     score: Optional[int] = None
     published_at: datetime
     fetched_at: datetime
+    # Per-user state, annotated by the endpoint from user_item_states; both default
+    # to False for items the current user hasn't saved / opened yet.
+    saved: bool = False
+    read: bool = False
 
     @field_serializer("published_at", "fetched_at")
     def _serialize_dt(self, value: datetime) -> str:

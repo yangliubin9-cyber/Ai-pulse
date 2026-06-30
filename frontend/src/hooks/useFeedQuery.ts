@@ -6,8 +6,8 @@ import type { CategoryKey } from '@/lib/types';
 interface UseFeedQueryOptions {
   /** When true, restrict the feed to featured items. */
   featured?: boolean;
-  /** Extra server-side filter merged into the query (e.g. source_type). */
-  extraParams?: { source_type?: string };
+  /** Extra server-side filters merged into the query (source_type / saved / unread). */
+  extraParams?: { source_type?: string; saved?: boolean; unread?: boolean };
 }
 
 /**
