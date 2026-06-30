@@ -98,6 +98,23 @@ describe('ItemCard content-first / link card', () => {
   });
 });
 
+describe('ItemCard saved / read state', () => {
+  it('renders a save button (收藏) when not saved', () => {
+    renderWithProviders(<ItemCard item={makeItem({ saved: false })} />);
+    expect(screen.getByRole('button', { name: '收藏' })).toBeInTheDocument();
+  });
+
+  it('renders an unsave button (取消收藏) when saved', () => {
+    renderWithProviders(<ItemCard item={makeItem({ saved: true })} />);
+    expect(screen.getByRole('button', { name: '取消收藏' })).toBeInTheDocument();
+  });
+
+  it('marks the card as read via data attribute when item.read', () => {
+    renderWithProviders(<ItemCard item={makeItem({ read: true })} />);
+    expect(screen.getByTestId('item-card')).toHaveAttribute('data-read', 'true');
+  });
+});
+
 describe('ItemDetailPage double-box layout', () => {
   it('renders the reason box (markdown bold) and the body box together', async () => {
     detail.mockResolvedValue(

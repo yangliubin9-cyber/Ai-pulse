@@ -19,6 +19,8 @@ export const itemsApi = {
         source_type: params.source_type,
         featured: params.featured,
         q: params.q,
+        saved: params.saved,
+        unread: params.unread,
         page: params.page,
         page_size: params.page_size,
       },
@@ -27,6 +29,23 @@ export const itemsApi = {
   },
   detail(id: string, signal?: AbortSignal): Promise<Item> {
     return apiRequest<Item>(`/items/${encodeURIComponent(id)}`, { signal });
+  },
+  /** Toggle the saved (bookmark) flag for an item. */
+  setSaved(id: string, saved: boolean): Promise<{ saved: boolean }> {
+    return apiRequest<{ saved: boolean }>(`/items/${encodeURIComponent(id)}/save`, {
+      method: 'POST',
+      body: { saved },
+    });
+  },
+  /** Mark a single item read (called when the detail page opens). */
+  markRead(id: string): Promise<{ read: boolean }> {
+    return apiRequest<{ read: boolean }>(`/items/${encodeURIComponent(id)}/read`, {
+      method: 'POST',
+    });
+  },
+  /** Mark every item read for the current user. */
+  markAllRead(): Promise<{ marked: number }> {
+    return apiRequest<{ marked: number }>('/items/read-all', { method: 'POST' });
   },
 };
 

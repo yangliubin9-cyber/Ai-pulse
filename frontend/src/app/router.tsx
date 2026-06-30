@@ -4,6 +4,7 @@ import { RequireAuth } from '@/components/layout/RequireAuth';
 import { LoginPage } from '@/pages/LoginPage';
 import { FeaturedPage } from '@/pages/FeaturedPage';
 import { AllPage } from '@/pages/AllPage';
+import { SavedPage } from '@/pages/SavedPage';
 import { DailyPage } from '@/pages/DailyPage';
 import { SourcesPage } from '@/pages/SourcesPage';
 import { ItemDetailPage } from '@/pages/ItemDetailPage';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <FeaturedPage /> },
       { path: 'all', element: <AllPage /> },
+      { path: 'saved', element: <SavedPage /> },
       { path: 'daily', element: <DailyPage /> },
       { path: 'sources', element: <SourcesPage /> },
       { path: 'item/:id', element: <ItemDetailPage /> },

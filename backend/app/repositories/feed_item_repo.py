@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.feed_item import FeedItem
+from app.models.user_item_state import UserItemState
 
 
 class FeedItemRepository:
@@ -114,6 +115,9 @@ class FeedItemRepository:
         q: str | None = None,
         page: int = 1,
         page_size: int = 20,
+        user_id: str | None = None,
+        saved: bool | None = None,
+        unread: bool | None = None,
     ) -> tuple[list[FeedItem], int]:
         filters = []
         if category:
@@ -140,6 +144,25 @@ class FeedItemRepository:
             # 全部 AI 动态里），保证用户点开精选里的任何一篇都能在站内读中文正文。
             filters.append(FeedItem.content.isnot(None))
             filters.append(FeedItem.content != "")
+        # Per-user state filters (EXISTS subqueries so they apply identically to
+        # both the count and the page query without a join changing row counts).
+        if saved and user_id is not None:
+            filters.append(
+                exists().where(
+                    (UserItemState.item_id == FeedItem.id)
+                    & (UserItemState.user_id == user_id)
+                    & (UserItemState.saved.is_(True))
+                )
+            )
+        if unread and user_id is not None:
+            # Unread = no state row marking it read for this user.
+            filters.append(
+                ~exists().where(
+                    (UserItemState.item_id == FeedItem.id)
+                    & (UserItemState.user_id == user_id)
+                    & (UserItemState.read.is_(True))
+                )
+            )
 
         count_stmt = select(func.count()).select_from(FeedItem)
         if filters:

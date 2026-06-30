@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Link2 } from 'lucide-react';
+import { ExternalLink, Link2, Bookmark } from 'lucide-react';
 import { SourceAvatar } from './SourceAvatar';
 import { CategoryBadge } from './CategoryBadge';
 import { ScoreBadge } from './ScoreBadge';
@@ -8,6 +8,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { displayTitle, displaySummary } from '@/lib/display';
 import { domainFromUrl } from '@/lib/domain';
 import { itemPath } from '@/lib/itemPath';
+import { cn } from '@/lib/cn';
+import { useToggleSaved } from '@/hooks/useItemState';
 import type { Item } from '@/lib/types';
 
 interface ItemCardProps {
@@ -42,24 +44,40 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
   const reason = item.reason_zh?.trim()
     ? item.reason_zh.replace(/\*\*/g, '').trim()
     : null;
+  const saved = Boolean(item.saved);
+  // "NEW" accent for items published within the last 6 hours.
+  const isNew = Date.now() - new Date(item.published_at).getTime() < 6 * 60 * 60 * 1000;
 
   return (
     <article
-      className="group surface-card surface-card-hover relative rounded-xl border border-border bg-surface p-4 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface"
+      className={cn(
+        'group surface-card surface-card-hover relative rounded-xl border border-border bg-surface p-4 transition hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface',
+        // Read items dim down so unread ones stand out; full opacity on hover.
+        item.read && 'opacity-60 hover:opacity-100',
+      )}
       data-testid="item-card"
+      data-read={item.read ? 'true' : undefined}
     >
-      {/* Header row: avatar · source · @handle · heat badge */}
+      {/* Header row: avatar · source · @handle · NEW · heat · bookmark */}
       <div className="mb-2 flex items-center gap-2 text-xs">
         <SourceAvatar name={item.source_name} />
         <span className="truncate font-medium text-foreground">{item.source_name}</span>
         {item.author && (
           <span className="truncate text-muted-foreground">@{item.author}</span>
         )}
-        {item.score != null && (
-          <span className="ml-auto shrink-0">
-            <ScoreBadge score={item.score} />
-          </span>
-        )}
+        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          {isNew && (
+            <span className="rounded-full bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+              {t('card.new')}
+            </span>
+          )}
+          {item.score != null && <ScoreBadge score={item.score} />}
+          <BookmarkButton
+            id={item.id}
+            saved={saved}
+            label={saved ? t('card.unsave') : t('card.save')}
+          />
+        </span>
       </div>
 
       <div className="flex gap-3">
@@ -146,6 +164,39 @@ function ItemCardImpl({ item }: ItemCardProps): React.JSX.Element {
         </a>
       </div>
     </article>
+  );
+}
+
+/** Bookmark toggle — stops propagation so it never triggers the card's nav. */
+function BookmarkButton({
+  id,
+  saved,
+  label,
+}: {
+  id: string;
+  saved: boolean;
+  label: string;
+}): React.JSX.Element {
+  const toggle = useToggleSaved();
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggle.mutate({ id, saved: !saved });
+      }}
+      aria-label={label}
+      aria-pressed={saved}
+      title={label}
+      className={cn(
+        'grid h-6 w-6 place-items-center rounded-md transition-colors',
+        saved ? 'text-accent' : 'text-muted-foreground hover:bg-surface-muted hover:text-accent',
+      )}
+      data-testid="bookmark-button"
+    >
+      <Bookmark className={cn('h-3.5 w-3.5', saved && 'fill-current')} aria-hidden />
+    </button>
   );
 }
 

@@ -26,6 +26,9 @@ class FeedUsecase:
         q: str | None = None,
         page: int = 1,
         page_size: int = 20,
+        user_id: str | None = None,
+        saved: bool | None = None,
+        unread: bool | None = None,
     ) -> tuple[list[FeedItem], int]:
         return await self._repo.list_items(
             category=category,
@@ -34,6 +37,9 @@ class FeedUsecase:
             q=q,
             page=page,
             page_size=page_size,
+            user_id=user_id,
+            saved=saved,
+            unread=unread,
         )
 
     async def get_item(self, id: str) -> FeedItem:

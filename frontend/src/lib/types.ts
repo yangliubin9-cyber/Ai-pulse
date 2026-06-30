@@ -45,6 +45,9 @@ export interface Item {
   image_url: string | null;
   score: number | null;
   published_at: string;
+  /** Per-user state, annotated by the backend for the current user. */
+  saved?: boolean;
+  read?: boolean;
 }
 
 export interface Paginated<T> {
@@ -96,6 +99,10 @@ export interface ItemsQuery {
   featured?: boolean;
   /** Free-text keyword search (backend filters title/summary). */
   q?: string;
+  /** Only items the current user saved (bookmarked). */
+  saved?: boolean;
+  /** Only items the current user hasn't read yet. */
+  unread?: boolean;
   page?: number;
   page_size?: number;
 }
