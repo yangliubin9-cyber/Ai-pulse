@@ -3,27 +3,28 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useLogin } from '@/hooks/useAuth';
+import { useRegister } from '@/hooks/useAuth';
 import { useAuthStore } from '@/store/authStore';
+import { ApiError } from '@/api/client';
 import { useT } from '@/i18n/I18nProvider';
 import { getErrorMessage } from '@/i18n/errors';
 
 /**
- * Login screen. A single focused card over a quiet branded backdrop whose
- * signature is the product's own pulse waveform — the literal "pulse" of AI
- * Pulse — drawn faint and wide behind a soft cyan glow. The card stays
- * disciplined (surface tokens, so it adapts to light / dark); the boldness is
- * spent once, on the ambient mark. All login logic + a11y are unchanged.
+ * Self-service registration. Same branded card as the login screen (pulse-
+ * waveform backdrop + glass card) so sign-up and sign-in feel like one flow.
+ * Creating an account logs the user straight in.
  */
-export function LoginPage(): React.JSX.Element {
+export function RegisterPage(): React.JSX.Element {
   const navigate = useNavigate();
   const t = useT();
   const status = useAuthStore((s) => s.status);
-  const login = useLogin();
+  const register = useRegister();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [mismatch, setMismatch] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,16 +39,31 @@ export function LoginPage(): React.JSX.Element {
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
-    if (login.isPending) return;
-    login.mutate(
+    if (register.isPending) return;
+    if (password !== confirm) {
+      setMismatch(true);
+      return;
+    }
+    setMismatch(false);
+    register.mutate(
       { email: email.trim(), password },
       { onSuccess: () => navigate('/', { replace: true }) },
     );
   };
 
+  const apiError =
+    register.isError &&
+    register.error instanceof ApiError &&
+    register.error.code === 'AUTH_EMAIL_EXISTS'
+      ? t('register.emailExists')
+      : register.isError
+        ? getErrorMessage(register.error, t)
+        : null;
+  const errorText = mismatch ? t('register.passwordMismatch') : apiError;
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10">
-      {/* Signature backdrop: soft cyan glow + a wide, faint pulse waveform. */}
+      {/* Same signature backdrop as the login screen. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/[0.10] blur-[130px]" />
         <svg
@@ -66,13 +82,11 @@ export function LoginPage(): React.JSX.Element {
 
       <div className="relative w-full max-w-[400px]">
         <div className="relative overflow-hidden rounded-2xl border border-border bg-surface/95 p-8 shadow-[0_1px_2px_rgba(2,8,23,0.05),0_28px_56px_-28px_rgba(2,8,23,0.28)] backdrop-blur-sm sm:p-9">
-          {/* Hairline of brand light across the card's top edge. */}
           <div
             aria-hidden
             className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent"
           />
 
-          {/* Brand mark + wordmark + subtitle */}
           <div className="flex flex-col items-center text-center">
             <span className="relative grid h-14 w-14 place-items-center rounded-2xl bg-accent/15 ring-1 ring-inset ring-accent/30">
               <span aria-hidden className="absolute inset-0 rounded-2xl bg-accent/25 blur-md" />
@@ -92,10 +106,9 @@ export function LoginPage(): React.JSX.Element {
             <h1 className="mt-5 text-[22px] font-semibold tracking-tight">
               AI <span className="text-accent">Pulse</span>
             </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">{t('login.subtitle')}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">{t('register.subtitle')}</p>
           </div>
 
-          {/* Form */}
           <form className="mt-7 space-y-4" onSubmit={handleSubmit} noValidate>
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium">
@@ -133,11 +146,12 @@ export function LoginPage(): React.JSX.Element {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('login.passwordPlaceholder')}
+                  placeholder={t('register.passwordHint')}
                   className="h-11 pl-9 pr-10"
+                  minLength={8}
                   required
                 />
                 <button
@@ -151,9 +165,34 @@ export function LoginPage(): React.JSX.Element {
               </div>
             </div>
 
-            {login.isError && (
+            <div className="space-y-1.5">
+              <label htmlFor="confirm" className="text-sm font-medium">
+                {t('register.confirmPassword')}
+              </label>
+              <div className="relative">
+                <Lock
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  id="confirm"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={confirm}
+                  onChange={(e) => {
+                    setConfirm(e.target.value);
+                    if (mismatch) setMismatch(false);
+                  }}
+                  placeholder={t('register.confirmPlaceholder')}
+                  className="h-11 pl-9"
+                  required
+                />
+              </div>
+            </div>
+
+            {errorText && (
               <p className="text-sm text-destructive" role="alert">
-                {getErrorMessage(login.error, t)}
+                {errorText}
               </p>
             )}
 
@@ -161,17 +200,17 @@ export function LoginPage(): React.JSX.Element {
               type="submit"
               className="mt-1 h-11 w-full text-[15px]"
               variant="accent"
-              disabled={login.isPending}
+              disabled={register.isPending}
             >
-              {login.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {login.isPending ? t('login.submitting') : t('login.submit')}
+              {register.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {register.isPending ? t('register.submitting') : t('register.submit')}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {t('login.noAccount')}{' '}
-            <Link to="/register" className="font-medium text-accent hover:underline">
-              {t('login.registerLink')}
+            {t('register.haveAccount')}{' '}
+            <Link to="/login" className="font-medium text-accent hover:underline">
+              {t('register.loginLink')}
             </Link>
           </p>
         </div>

@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     APP_SECRET_KEY: SecretStr
     SESSION_COOKIE_SECURE: bool = False
     CORS_ORIGINS: str = ""
+    # Open self-service registration. True = anyone can create an account; set
+    # False to lock the instance to existing accounts only (single-user mode).
+    REGISTRATION_ENABLED: bool = True
 
     # --- ingest ---
     INGEST_WINDOW_DAYS: int = 7

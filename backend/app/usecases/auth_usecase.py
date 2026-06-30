@@ -15,6 +15,7 @@ from app.constants import (
     SESSION_TTL_SECONDS,
 )
 from app.core.errors import (
+    EmailExistsError,
     InvalidCredentialsError,
     OldPasswordWrongError,
     TooManyAttemptsError,
@@ -82,6 +83,18 @@ class AuthUsecase:
         user.password_salt = new_salt
         await self._repo.update(user)
         await self._session.commit()
+
+    async def register(self, email: str, password: str) -> User:
+        """Create a new account (email already normalised by the schema). Raises
+        EmailExistsError on a duplicate; the caller starts a session afterwards."""
+        existing = await self._repo.get_by_email(email)
+        if existing is not None:
+            raise EmailExistsError()
+        password_hash, salt = hash_password(password)
+        user = User(email=email, password_hash=password_hash, password_salt=salt)
+        await self._repo.create(user)
+        await self._session.commit()
+        return user
 
     async def seed_default_admin(self) -> bool:
         if await self._repo.count() > 0:

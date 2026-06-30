@@ -55,6 +55,16 @@ class OldPasswordWrongError(AppError):
         super().__init__("AUTH_OLD_PASSWORD_WRONG", message, status.HTTP_400_BAD_REQUEST)
 
 
+class EmailExistsError(AppError):
+    def __init__(self, message: str = "该邮箱已被注册") -> None:
+        super().__init__("AUTH_EMAIL_EXISTS", message, status.HTTP_409_CONFLICT)
+
+
+class RegistrationDisabledError(AppError):
+    def __init__(self, message: str = "当前未开放注册") -> None:
+        super().__init__("AUTH_REGISTRATION_DISABLED", message, status.HTTP_403_FORBIDDEN)
+
+
 class NotFoundError(AppError):
     def __init__(self, message: str = "资源不存在") -> None:
         super().__init__("NOT_FOUND", message, status.HTTP_404_NOT_FOUND)

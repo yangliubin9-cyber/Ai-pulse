@@ -40,6 +40,21 @@ export function useLogin() {
   });
 }
 
+export function useRegister() {
+  const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ email, password }: { email: string; password: string }) =>
+      authApi.register(email, password),
+    onSuccess: (data) => {
+      // Registration logs the new account straight in.
+      setUser(data.user);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.all });
+    },
+  });
+}
+
 export function useLogout() {
   const clear = useAuthStore((s) => s.clear);
   const queryClient = useQueryClient();

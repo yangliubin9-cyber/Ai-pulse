@@ -240,3 +240,52 @@ async def test_items_featured_ordered_by_score_desc_nulls_last(client, sessionma
     assert items[1]["title"] == "low score"
     assert items[2]["title"] == "no score"  # None sorts last
     assert items[0]["score"] == 250
+
+
+@pytest.mark.asyncio
+async def test_register_creates_account_and_logs_in(client, sessionmaker_fx):
+    r = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "New.User@Example.com", "password": "secretpw123"},
+    )
+    assert r.status_code == 201
+    assert r.json()["user"]["email"] == "new.user@example.com"  # normalised
+    # The session cookie is set, so a protected endpoint is reachable.
+    r = await client.get("/api/v1/auth/me")
+    assert r.status_code == 200
+    assert r.json()["email"] == "new.user@example.com"
+
+
+@pytest.mark.asyncio
+async def test_register_duplicate_email_conflicts(client, sessionmaker_fx):
+    await _seed_admin(sessionmaker_fx)
+    r = await client.post(
+        "/api/v1/auth/register",
+        json={"email": DEFAULT_ADMIN_EMAIL, "password": "secretpw123"},
+    )
+    assert r.status_code == 409
+    assert r.json()["error"]["code"] == "AUTH_EMAIL_EXISTS"
+
+
+@pytest.mark.asyncio
+async def test_register_short_password_rejected(client):
+    r = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "x@example.com", "password": "short"},
+    )
+    assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_registered_user_can_login_case_insensitively(client, sessionmaker_fx):
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "member@example.com", "password": "secretpw123"},
+    )
+    await client.post("/api/v1/auth/logout")  # clear the auto-login session
+    r = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "Member@Example.com", "password": "secretpw123"},
+    )
+    assert r.status_code == 200
+    assert r.json()["user"]["email"] == "member@example.com"

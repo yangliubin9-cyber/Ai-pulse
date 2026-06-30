@@ -240,6 +240,20 @@ export const zh = {
     description:
       '从官方博客、Hacker News、arXiv 等公开来源聚合，按模型 / 产品 / 行业 / 论文 / 技巧分类，去噪后只留下值得一看的内容。',
     disclaimer: '仅聚合公开来源，保留原文出处与链接。',
+    noAccount: '没有账号？',
+    registerLink: '注册',
+  },
+  register: {
+    subtitle: '创建账号，开始使用',
+    passwordHint: '至少 8 位',
+    confirmPassword: '确认密码',
+    confirmPlaceholder: '再次输入密码',
+    submit: '注册',
+    submitting: '注册中…',
+    passwordMismatch: '两次输入的密码不一致',
+    emailExists: '该邮箱已被注册',
+    haveAccount: '已有账号？',
+    loginLink: '登录',
   },
 
   settings: {
