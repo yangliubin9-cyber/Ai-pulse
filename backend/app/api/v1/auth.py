@@ -8,11 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_cache_dep, get_current_user, get_db
 from app.constants import SESSION_COOKIE_NAME, SESSION_TTL_SECONDS
 from app.core.config import get_settings
+from app.core.errors import RegistrationDisabledError
 from app.models.user import User
 from app.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
     LoginResponse,
+    RegisterRequest,
     UserOut,
 )
 from app.services.cache.base import CacheAdapter
@@ -32,6 +34,32 @@ async def login(
     user = await usecase.login(body.email, body.password)
     token = await usecase.create_session(user.id)
     settings = get_settings()
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=token,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=settings.SESSION_COOKIE_SECURE,
+        path="/",
+    )
+    return LoginResponse(user=UserOut(id=user.id, email=user.email))
+
+
+@router.post("/register", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
+async def register(
+    body: RegisterRequest,
+    response: Response,
+    session: AsyncSession = Depends(get_db),
+    cache: CacheAdapter = Depends(get_cache_dep),
+) -> LoginResponse:
+    settings = get_settings()
+    if not settings.REGISTRATION_ENABLED:
+        raise RegistrationDisabledError()
+    usecase = AuthUsecase(session, cache)
+    user = await usecase.register(body.email, body.password)
+    # Registration logs the new user straight in (same session cookie as login).
+    token = await usecase.create_session(user.id)
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=token,

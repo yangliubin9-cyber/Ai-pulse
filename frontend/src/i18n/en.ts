@@ -248,6 +248,20 @@ export const en: Zh = {
     description:
       'Aggregated from public sources like official blogs, Hacker News and arXiv, sorted into Models / Products / Industry / Papers / Techniques, denoised down to what is worth reading.',
     disclaimer: 'Aggregates public sources only, keeping the original attribution and links.',
+    noAccount: 'No account?',
+    registerLink: 'Sign up',
+  },
+  register: {
+    subtitle: 'Create your account to get started',
+    passwordHint: 'At least 8 characters',
+    confirmPassword: 'Confirm password',
+    confirmPlaceholder: 'Re-enter your password',
+    submit: 'Create account',
+    submitting: 'Creating…',
+    passwordMismatch: 'The two passwords do not match',
+    emailExists: 'This email is already registered',
+    haveAccount: 'Already have an account?',
+    loginLink: 'Sign in',
   },
 
   settings: {
