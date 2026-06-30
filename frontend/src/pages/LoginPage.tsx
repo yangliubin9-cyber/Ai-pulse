@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { Logo } from '@/components/layout/Logo';
+import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLogin } from '@/hooks/useAuth';
@@ -10,8 +9,10 @@ import { useT } from '@/i18n/I18nProvider';
 import { getErrorMessage } from '@/i18n/errors';
 
 /**
- * Standalone login screen (no AppShell). Two-pane on wide screens: a quiet
- * brand panel and a focused form. Restrained, SaaS-style, not a templated face.
+ * Standalone login screen: a single centered card on a quiet page — brand mark,
+ * title, and a focused email + password form with icon-prefixed fields. Built
+ * from surface tokens so it adapts to the light / dark theme. The self-drawn
+ * pulse mark mirrors the app Logo (kept inline so it can be sized larger here).
  */
 export function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
@@ -44,48 +45,53 @@ export function LoginPage(): React.JSX.Element {
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <aside className="relative hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex">
-        <Logo className="text-lg text-white" />
-        <div className="max-w-sm">
-          <h2 className="text-2xl font-semibold leading-snug tracking-tight text-white">
-            {t('login.valueProp1')}
-            <br />
-            {t('login.valueProp2Prefix')}
-            <span className="text-accent">{t('login.valuePropTimeline')}</span>
-            {t('login.valueProp2Suffix')}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-sidebar-foreground/80">
-            {t('login.description')}
-          </p>
-        </div>
-        <p className="text-xs text-sidebar-foreground/60">{t('login.disclaimer')}</p>
-      </aside>
-
-      <main className="flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 lg:hidden">
-            <Logo className="text-lg" />
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+      <div className="w-full max-w-[400px]">
+        <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm sm:p-9">
+          {/* Brand mark + title */}
+          <div className="flex flex-col items-center text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-accent/15 ring-1 ring-inset ring-accent/30">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-7 w-7 text-accent"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M2 13 H7 L9.5 6 L13 18 L15.5 11 H22" />
+              </svg>
+            </span>
+            <h1 className="mt-5 text-xl font-semibold tracking-tight">{t('login.title')}</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">{t('login.subtitle')}</p>
           </div>
-          <h1 className="text-xl font-semibold tracking-tight">{t('login.title')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t('login.subtitle')}</p>
 
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+          {/* Form */}
+          <form className="mt-7 space-y-4" onSubmit={handleSubmit} noValidate>
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium">
                 {t('login.email')}
               </label>
-              <Input
-                id="email"
-                ref={emailRef}
-                type="email"
-                autoComplete="username"
-                inputMode="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t('login.emailPlaceholder')}
-                required
-              />
+              <div className="relative">
+                <Mail
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  id="email"
+                  ref={emailRef}
+                  type="email"
+                  autoComplete="username"
+                  inputMode="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('login.emailPlaceholder')}
+                  className="pl-9"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -93,13 +99,18 @@ export function LoginPage(): React.JSX.Element {
                 {t('login.password')}
               </label>
               <div className="relative">
+                <Lock
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10"
+                  placeholder={t('login.passwordPlaceholder')}
+                  className="pl-9 pr-10"
                   required
                 />
                 <button
@@ -108,11 +119,7 @@ export function LoginPage(): React.JSX.Element {
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -125,7 +132,7 @@ export function LoginPage(): React.JSX.Element {
 
             <Button
               type="submit"
-              className="w-full"
+              className="mt-1 w-full"
               variant="accent"
               disabled={login.isPending}
             >
@@ -134,7 +141,12 @@ export function LoginPage(): React.JSX.Element {
             </Button>
           </form>
         </div>
-      </main>
+
+        {/* Footer note below the card */}
+        <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground/70">
+          {t('login.disclaimer')}
+        </p>
+      </div>
     </div>
   );
 }
