@@ -236,6 +236,7 @@ export const en: Zh = {
     email: 'Email',
     password: 'Password',
     emailPlaceholder: 'you@example.com',
+    passwordPlaceholder: 'Enter your password',
     showPassword: 'Show password',
     hidePassword: 'Hide password',
     submit: 'Sign in',

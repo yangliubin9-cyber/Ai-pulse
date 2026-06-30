@@ -228,6 +228,7 @@ export const zh = {
     email: '邮箱',
     password: '密码',
     emailPlaceholder: 'you@example.com',
+    passwordPlaceholder: '输入密码',
     showPassword: '显示密码',
     hidePassword: '隐藏密码',
     submit: '登录',
